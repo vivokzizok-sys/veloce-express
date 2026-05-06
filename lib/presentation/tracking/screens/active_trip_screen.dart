@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:lottie/lottie.dart' as lottie;
 import 'package:url_launcher/url_launcher.dart';
 
@@ -14,7 +12,6 @@ import '../../../core/utils/currency.dart';
 import '../../../domain/entities/order_entity.dart';
 import '../../../domain/entities/user_entity.dart';
 import '../../auth/bloc/auth_bloc.dart';
-import '../../shared/widgets/osm_map_widgets.dart';
 import '../../shared/widgets/shared_widgets.dart';
 import '../bloc/tracking_bloc.dart';
 
@@ -34,55 +31,14 @@ class ActiveTripScreen extends StatefulWidget {
 
 class _ActiveTripScreenState extends State<ActiveTripScreen>
     with TickerProviderStateMixin {
-  final MapController _mapController = MapController();
-  LatLng? _driverPoint;
+  double? _driverLat;
+  double? _driverLng;
   late final AnimationController _pulseCtrl;
-  late final AnimationController _panelCtrl;
-  late final Animation<double> _panelAnim;
   late final bool _isDriver;
-
-  LatLng get _pickupPoint => LatLng(
-        widget.order.pickupLocation.latitude,
-        widget.order.pickupLocation.longitude,
-      );
-
-  LatLng get _dropoffPoint => LatLng(
-        widget.order.dropoffLocation.latitude,
-        widget.order.dropoffLocation.longitude,
-      );
-
-  List<Marker> get _markers => [
-        osmPinMarker(
-          point: _pickupPoint,
-          color: AppColors.success,
-          icon: Icons.trip_origin_rounded,
-          label: 'Pickup',
-        ),
-        osmPinMarker(
-          point: _dropoffPoint,
-          color: AppColors.error,
-          icon: Icons.location_on_rounded,
-          label: 'Drop-off',
-        ),
-        if (_driverPoint != null)
-          osmPinMarker(
-            point: _driverPoint!,
-            color: AppColors.accent,
-            icon: Icons.local_shipping_outlined,
-            label: _isDriver ? context.t('you') : widget.otherParty.fullName,
-          ),
-      ];
 
   @override
   void initState() {
     super.initState();
-    _panelCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 480),
-    );
-    _panelAnim =
-        CurvedAnimation(parent: _panelCtrl, curve: Curves.easeOutCubic);
-    _panelCtrl.forward();
     _pulseCtrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -99,25 +55,32 @@ class _ActiveTripScreenState extends State<ActiveTripScreen>
       context
           .read<TrackingBloc>()
           .add(TrackingWatchDriver(widget.otherParty.uid));
+      if (widget.order.status == OrderStatus.delivered &&
+          widget.order.clientRating == null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _showRatingSheet(context);
+        });
+      }
     }
   }
 
   @override
   void dispose() {
     _pulseCtrl.dispose();
-    _panelCtrl.dispose();
     super.dispose();
   }
 
   void _updateDriverMarker(double lat, double lng) {
-    final next = LatLng(lat, lng);
-    setState(() => _driverPoint = next);
-    _mapController.move(next, 15);
+    setState(() {
+      _driverLat = lat;
+      _driverLng = lng;
+    });
   }
 
   Future<void> _call(String phone) async {
-    final uri = Uri.parse('tel:$phone');
-    if (await canLaunchUrl(uri)) await launchUrl(uri);
+    final normalized = phone.replaceAll(RegExp(r'[\s\-.]'), '');
+    final uri = Uri(scheme: 'tel', path: normalized);
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   @override
@@ -154,62 +117,49 @@ class _ActiveTripScreenState extends State<ActiveTripScreen>
             backgroundColor: AppColors.page(context),
             body: Stack(
               children: [
-                FlutterMap(
-                  mapController: _mapController,
-                  options: MapOptions(
-                    initialCenter: _pickupPoint,
-                    initialZoom: 14,
-                  ),
-                  children: [
-                    const OsmTiles(),
-                    PolylineLayer(
-                      polylines: [
-                        Polyline(
-                          points: [_pickupPoint, _dropoffPoint],
-                          color: AppColors.accent,
-                          strokeWidth: 4,
+                SafeArea(
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
+                        child: _TopStatusBar(
+                          order: widget.order,
+                          pulseCtrl: _pulseCtrl,
+                          onBack: () async {
+                            final leave = await _confirmExit(context);
+                            if (!context.mounted || !leave) return;
+                            context.go(
+                                _isDriver ? '/driver/home' : '/client/home');
+                          },
                         ),
-                      ],
-                    ),
-                    MarkerLayer(markers: _markers),
-                  ],
-                ),
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: _TopStatusBar(
-                    order: widget.order,
-                    pulseCtrl: _pulseCtrl,
-                    onBack: () async {
-                      final leave = await _confirmExit(context);
-                      if (!context.mounted || !leave) return;
-                      context.go(_isDriver ? '/driver/home' : '/client/home');
-                    },
-                  ),
-                ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 1),
-                      end: Offset.zero,
-                    ).animate(_panelAnim),
-                    child: _BottomPanel(
-                      order: widget.order,
-                      otherParty: widget.otherParty,
-                      isDriver: _isDriver,
-                      isLoading: loading,
-                      onCall: () => _call(
-                        _isDriver
-                            ? widget.order.clientPhone
-                            : widget.otherParty.phoneNumber,
                       ),
-                      onComplete:
-                          _isDriver ? () => _confirmTrip(context) : null,
-                    ),
+                      Expanded(
+                        child: ListView(
+                          padding: const EdgeInsets.all(18),
+                          children: [
+                            _TripRouteOverview(
+                              order: widget.order,
+                              driverLat: _driverLat,
+                              driverLng: _driverLng,
+                              isDriver: _isDriver,
+                            ),
+                          ],
+                        ),
+                      ),
+                      _BottomPanel(
+                        order: widget.order,
+                        otherParty: widget.otherParty,
+                        isDriver: _isDriver,
+                        isLoading: loading,
+                        onCall: () => _call(
+                          _isDriver
+                              ? widget.order.clientPhone
+                              : widget.otherParty.phoneNumber,
+                        ),
+                        onComplete:
+                            _isDriver ? () => _confirmTrip(context) : null,
+                      ),
+                    ],
                   ),
                 ),
                 if (loading)
@@ -374,6 +324,71 @@ class _TopStatusBar extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _TripRouteOverview extends StatelessWidget {
+  final OrderEntity order;
+  final double? driverLat;
+  final double? driverLng;
+  final bool isDriver;
+
+  const _TripRouteOverview({
+    required this.order,
+    required this.driverLat,
+    required this.driverLng,
+    required this.isDriver,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.surface(context),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(context.t('return_active_trip'), style: AppTextStyles.title2),
+          const SizedBox(height: 18),
+          _RouteRow(
+            icon: Icons.trip_origin_rounded,
+            color: AppColors.success,
+            label: context.t('from'),
+            address: order.pickupAddress,
+          ),
+          const SizedBox(height: 12),
+          _RouteRow(
+            icon: Icons.location_on_rounded,
+            color: AppColors.error,
+            label: context.t('to'),
+            address: order.dropoffAddress,
+          ),
+          if (driverLat != null && driverLng != null) ...[
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                const Icon(Icons.my_location_rounded,
+                    color: AppColors.accent, size: 18),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '${isDriver ? context.t('you') : context.t('driver')}: '
+                    '${driverLat!.toStringAsFixed(5)}, ${driverLng!.toStringAsFixed(5)}',
+                    style: AppTextStyles.captionMedium.copyWith(
+                      color: AppColors.textSecondary(context),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -673,8 +688,8 @@ class _RatingSheetState extends State<_RatingSheet>
           TextField(
             controller: _commentCtrl,
             maxLines: 2,
-            decoration: const InputDecoration(
-              hintText: 'Leave a comment (optional)',
+            decoration: InputDecoration(
+              hintText: context.t('leave_comment'),
             ),
           ),
           const SizedBox(height: 20),

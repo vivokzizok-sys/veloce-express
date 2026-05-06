@@ -45,12 +45,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.adminRole.withOpacity(0.1),
+              color: AppColors.surfaceAlt(context),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text('ADMIN',
-                style:
-                    AppTextStyles.label.copyWith(color: AppColors.adminRole)),
+            child: Text(
+              context.t('admin').toUpperCase(),
+              style: AppTextStyles.label.copyWith(
+                color: AppColors.textPrimary(context),
+              ),
+            ),
           ),
           const SizedBox(width: 10),
           Text(context.t('dashboard')),
@@ -168,7 +171,7 @@ class _PendingUserCardState extends State<_PendingUserCard> {
 
   @override
   Widget build(BuildContext context) {
-    final name = widget.data['fullName'] as String? ?? 'Unknown';
+    final name = widget.data['fullName'] as String? ?? context.t('unknown');
     final email = widget.data['email'] as String? ?? '';
     final role = widget.data['role'] as String? ?? 'client';
     final photoBase64 = widget.data['vehiclePhotoBase64'] as String?;
@@ -232,7 +235,7 @@ class _PendingUserCardState extends State<_PendingUserCard> {
                 children: [
                   Text(context.t('vehicle_photo'),
                       style: AppTextStyles.captionMedium.copyWith(
-                          color: AppColors.grey700,
+                          color: AppColors.textSecondary(context),
                           fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
                   ClipRRect(
@@ -313,10 +316,21 @@ class _RoleBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDriver = role == 'driver';
-    final color = isDriver ? AppColors.driverRole : AppColors.clientRole;
+    final isAdmin = role == 'admin';
+    final color = isDriver
+        ? AppColors.driverRole
+        : isAdmin
+            ? AppColors.textPrimary(context)
+            : AppColors.clientRole;
+    final roleLabel = context.t(isDriver
+        ? 'driver'
+        : isAdmin
+            ? 'admin'
+            : 'client');
+    final vehicleLabel = vehicleType == null ? null : context.t(vehicleType!);
     final label = isDriver
-        ? 'Driver${vehicleType != null ? ' · ${vehicleType![0].toUpperCase()}${vehicleType!.substring(1)}' : ''}'
-        : 'Client';
+        ? '$roleLabel${vehicleLabel != null ? ' · $vehicleLabel' : ''}'
+        : roleLabel;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -346,16 +360,15 @@ class _OrdersTab extends StatefulWidget {
 class _OrdersTabState extends State<_OrdersTab> {
   String _filter = 'all';
 
-  final _filters = {
-    'all': 'All',
-    'open': 'Open',
-    'inProgress': 'Active',
-    'delivered': 'Done',
-    'cancelled': 'Cancelled',
-  };
-
   @override
   Widget build(BuildContext context) {
+    final filters = {
+      'all': context.t('all'),
+      'open': context.statusText('open'),
+      'inProgress': context.statusText('inProgress'),
+      'delivered': context.statusText('delivered'),
+      'cancelled': context.statusText('cancelled'),
+    };
     Query query = widget.db
         .collection('orders')
         .orderBy('createdAt', descending: true)
@@ -373,7 +386,7 @@ class _OrdersTabState extends State<_OrdersTab> {
           child: ListView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            children: _filters.entries.map((e) {
+            children: filters.entries.map((e) {
               final selected = _filter == e.key;
               return GestureDetector(
                 onTap: () => setState(() => _filter = e.key),
@@ -488,7 +501,7 @@ class _AdminOrderRow extends StatelessWidget {
               color: statusColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Text(status,
+            child: Text(context.statusText(status),
                 style: AppTextStyles.caption
                     .copyWith(color: statusColor, fontWeight: FontWeight.w700)),
           ),
@@ -626,7 +639,7 @@ class _UserRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = data['fullName'] as String? ?? 'Unknown';
+    final name = data['fullName'] as String? ?? context.t('unknown');
     final email = data['email'] as String? ?? '';
     final role = data['role'] as String? ?? 'client';
     final isApproved = data['isApproved'] as bool? ?? false;
@@ -673,7 +686,8 @@ class _UserRow extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
             if (role == 'driver')
-              Text('⭐ ${rating.toStringAsFixed(1)} · $deliveries trips',
+              Text(
+                  '⭐ ${rating.toStringAsFixed(1)} · $deliveries ${context.t('trips_label')}',
                   style: AppTextStyles.caption),
           ],
         )),

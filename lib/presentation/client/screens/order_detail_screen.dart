@@ -114,7 +114,10 @@ class _OrderSummary extends StatelessWidget {
                   ),
                 ),
               ),
-              StatusChip(label: order.status.value, color: AppColors.accent),
+              StatusChip(
+                label: context.statusText(order.status.value),
+                color: AppColors.accent,
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -132,7 +135,7 @@ class _OrderSummary extends StatelessWidget {
           if (order.acceptedBidAmount != null) ...[
             const SizedBox(height: 14),
             Text(
-              'Accepted fare: ${CurrencyFormatter.da(order.acceptedBidAmount!)}',
+              '${context.t('accepted_fare')}: ${CurrencyFormatter.da(order.acceptedBidAmount!)}',
               style:
                   AppTextStyles.bodyMedium.copyWith(color: AppColors.success),
             ),
@@ -272,7 +275,7 @@ class _BidTile extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 10),
               child: StatusChip(
-                label: bid.status.value,
+                label: context.statusText(bid.status.value),
                 color: bid.status == BidStatus.accepted
                     ? AppColors.success
                     : AppColors.grey400,

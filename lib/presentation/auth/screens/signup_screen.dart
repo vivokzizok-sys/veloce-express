@@ -101,29 +101,47 @@ class _SignupScreenState extends State<SignupScreen> {
                     AppTextField(
                       controller: _name,
                       hint: context.t('full_name'),
-                      validator: (v) =>
-                          Validators.required(v, label: context.t('full_name')),
+                      validator: (v) => v == null || v.trim().isEmpty
+                          ? context.t('field_required')
+                          : null,
                     ),
                     const SizedBox(height: 12),
                     AppTextField(
                       controller: _email,
                       hint: context.t('email'),
                       keyboardType: TextInputType.emailAddress,
-                      validator: Validators.email,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return context.t('field_required');
+                        }
+                        return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+                                .hasMatch(v.trim())
+                            ? null
+                            : context.t('valid_email');
+                      },
                     ),
                     const SizedBox(height: 12),
                     AppTextField(
                       controller: _phone,
                       hint: context.t('phone'),
                       keyboardType: TextInputType.phone,
-                      validator: Validators.phone,
+                      validator: (v) => Validators.phone(v) == null
+                          ? null
+                          : context.t('algerian_phone_error'),
                     ),
                     const SizedBox(height: 12),
                     AppTextField(
                       controller: _password,
                       hint: context.t('password'),
                       obscureText: true,
-                      validator: Validators.password,
+                      validator: (v) {
+                        if (v == null || v.isEmpty) {
+                          return context.t('field_required');
+                        }
+                        return v.length >= 6
+                            ? null
+                            : context.t('password_length');
+                      },
                     ),
                     if (_role == UserRole.driver) ...[
                       const SizedBox(height: 18),
@@ -135,7 +153,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         items: [
                           DropdownMenuItem(
                             value: VehicleType.bike,
-                            child: Text(context.t('bike')),
+                            child: Text(context.t('motorcycle')),
                           ),
                           DropdownMenuItem(
                             value: VehicleType.car,
@@ -189,6 +207,15 @@ class _SignupScreenState extends State<SignupScreen> {
                       isLoading: loading,
                       onPressed: () {
                         if (!_formKey.currentState!.validate()) return;
+                        if (_role == UserRole.driver && _vehiclePhoto == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content:
+                                  Text(context.t('vehicle_photo_required')),
+                            ),
+                          );
+                          return;
+                        }
                         context.read<AuthBloc>().add(AuthSignUpRequested(
                               email: _email.text,
                               password: _password.text,

@@ -17,6 +17,7 @@ class OrderModel extends OrderEntity {
     super.driverId,
     super.acceptedBidId,
     super.acceptedBidAmount,
+    super.clientRating,
     super.createdAt,
   });
 
@@ -35,6 +36,7 @@ class OrderModel extends OrderEntity {
       driverId: order.driverId,
       acceptedBidId: order.acceptedBidId,
       acceptedBidAmount: order.acceptedBidAmount,
+      clientRating: order.clientRating,
       createdAt: order.createdAt,
     );
   }
@@ -62,6 +64,7 @@ class OrderModel extends OrderEntity {
       driverId: data['driverId'] as String?,
       acceptedBidId: data['acceptedBidId'] as String?,
       acceptedBidAmount: (data['acceptedBidAmount'] as num?)?.toDouble(),
+      clientRating: (data['clientRating'] as num?)?.toDouble(),
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
     );
   }
@@ -82,6 +85,7 @@ class OrderModel extends OrderEntity {
       'driverId': driverId,
       'acceptedBidId': acceptedBidId,
       'acceptedBidAmount': acceptedBidAmount,
+      'clientRating': clientRating,
       'updatedAt': FieldValue.serverTimestamp(),
       if (creating) 'createdAt': FieldValue.serverTimestamp(),
     };

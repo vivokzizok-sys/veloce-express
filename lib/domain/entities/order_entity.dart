@@ -41,6 +41,7 @@ class OrderEntity {
   final String? driverId;
   final String? acceptedBidId;
   final double? acceptedBidAmount;
+  final double? clientRating;
   final DateTime? createdAt;
 
   const OrderEntity({
@@ -57,6 +58,7 @@ class OrderEntity {
     this.driverId,
     this.acceptedBidId,
     this.acceptedBidAmount,
+    this.clientRating,
     this.createdAt,
   });
 
@@ -65,6 +67,7 @@ class OrderEntity {
     String? driverId,
     String? acceptedBidId,
     double? acceptedBidAmount,
+    double? clientRating,
   }) {
     return OrderEntity(
       orderId: orderId,
@@ -80,6 +83,7 @@ class OrderEntity {
       driverId: driverId ?? this.driverId,
       acceptedBidId: acceptedBidId ?? this.acceptedBidId,
       acceptedBidAmount: acceptedBidAmount ?? this.acceptedBidAmount,
+      clientRating: clientRating ?? this.clientRating,
       createdAt: createdAt,
     );
   }

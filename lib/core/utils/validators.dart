@@ -22,7 +22,8 @@ class Validators {
   static String? phone(String? value) {
     final base = required(value, label: 'Phone');
     if (base != null) return base;
-    final digits = value!.replaceAll(RegExp(r'\D'), '');
-    return digits.length >= 7 ? null : 'Enter a valid phone number';
+    final compact = value!.replaceAll(RegExp(r'[\s\-.]'), '');
+    final ok = RegExp(r'^(?:0|\+213|00213)[567]\d{8}$').hasMatch(compact);
+    return ok ? null : 'Enter a valid Algerian mobile number';
   }
 }

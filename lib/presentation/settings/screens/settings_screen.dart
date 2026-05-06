@@ -292,7 +292,7 @@ class _AccountSettingsSheetState extends State<_AccountSettingsSheet> {
                   controller: _name,
                   hint: context.t('full_name'),
                   validator: (v) => v == null || v.trim().isEmpty
-                      ? context.t('full_name')
+                      ? context.t('field_required')
                       : null,
                 ),
                 const SizedBox(height: 10),
@@ -300,14 +300,29 @@ class _AccountSettingsSheetState extends State<_AccountSettingsSheet> {
                   controller: _email,
                   hint: context.t('email'),
                   keyboardType: TextInputType.emailAddress,
-                  validator: (v) =>
-                      v != null && v.contains('@') ? null : context.t('email'),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return context.t('field_required');
+                    }
+                    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+                            .hasMatch(v.trim())
+                        ? null
+                        : context.t('valid_email');
+                  },
                 ),
                 const SizedBox(height: 10),
                 AppTextField(
                   controller: _phone,
                   hint: context.t('phone'),
                   keyboardType: TextInputType.phone,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return null;
+                    final compact = v.replaceAll(RegExp(r'[\s\-.]'), '');
+                    return RegExp(r'^(?:0|\+213|00213)[567]\d{8}$')
+                            .hasMatch(compact)
+                        ? null
+                        : context.t('algerian_phone_error');
+                  },
                 ),
                 const SizedBox(height: 10),
                 AppTextField(
@@ -316,7 +331,7 @@ class _AccountSettingsSheetState extends State<_AccountSettingsSheet> {
                   obscureText: true,
                   validator: (v) {
                     if (v == null || v.isEmpty) return null;
-                    return v.length >= 6 ? null : context.t('new_password');
+                    return v.length >= 6 ? null : context.t('password_length');
                   },
                 ),
                 const SizedBox(height: 6),

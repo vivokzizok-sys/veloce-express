@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../settings/app_settings.dart';
 import '../../domain/entities/order_entity.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../presentation/admin/screens/admin_dashboard_screen.dart';
@@ -15,7 +16,9 @@ import '../../presentation/auth/screens/signup_screen.dart';
 import '../../presentation/auth/screens/splash_screen.dart';
 import '../../presentation/client/screens/client_home_screen.dart';
 import '../../presentation/client/screens/create_order_screen.dart';
+import '../../presentation/client/screens/client_dashboard_screen.dart';
 import '../../presentation/client/screens/order_detail_screen.dart';
+import '../../presentation/driver/screens/driver_dashboard_screen.dart';
 import '../../presentation/driver/screens/driver_home_screen.dart';
 import '../../presentation/driver/screens/place_bid_screen.dart';
 import '../../presentation/settings/screens/settings_screen.dart';
@@ -29,10 +32,12 @@ class AppRoutes {
   static const pendingApproval = '/pending-approval';
 
   static const clientHome = '/client/home';
+  static const clientDashboard = '/client/dashboard';
   static const createOrder = '/client/create-order';
   static const orderDetail = '/client/order/:orderId';
 
   static const driverHome = '/driver/home';
+  static const driverDashboard = '/driver/dashboard';
   static const placeBid = '/driver/bid/:orderId';
 
   static const activeTrip = '/active-trip';
@@ -127,6 +132,11 @@ class AppRouter {
           pageBuilder: (_, state) => _fade(state, const ClientHomeScreen()),
         ),
         GoRoute(
+          path: AppRoutes.clientDashboard,
+          pageBuilder: (_, state) =>
+              _slide(state, const ClientDashboardScreen()),
+        ),
+        GoRoute(
           path: AppRoutes.createOrder,
           pageBuilder: (_, state) => _slide(state, const CreateOrderScreen()),
         ),
@@ -140,6 +150,11 @@ class AppRouter {
           pageBuilder: (_, state) => _fade(state, const DriverHomeScreen()),
         ),
         GoRoute(
+          path: AppRoutes.driverDashboard,
+          pageBuilder: (_, state) =>
+              _slide(state, const DriverDashboardScreen()),
+        ),
+        GoRoute(
           path: AppRoutes.placeBid,
           pageBuilder: (_, state) => _slide(
             state,
@@ -148,12 +163,16 @@ class AppRouter {
         ),
         GoRoute(
           path: AppRoutes.activeTrip,
-          pageBuilder: (_, state) {
+          pageBuilder: (context, state) {
             final extra = state.extra as Map<String, dynamic>?;
             if (extra == null) {
               return _fade(
                 state,
-                const Scaffold(body: Center(child: Text('Trip data missing'))),
+                Scaffold(
+                  body: Center(
+                    child: Text(context.t('active_trip_missing')),
+                  ),
+                ),
               );
             }
             return _slide(
@@ -175,7 +194,11 @@ class AppRouter {
         ),
       ],
       errorBuilder: (_, state) => Scaffold(
-        body: Center(child: Text('Page not found: ${state.error}')),
+        body: Builder(
+          builder: (context) => Center(
+            child: Text('${context.t('page_not_found')}: ${state.error}'),
+          ),
+        ),
       ),
     );
   }

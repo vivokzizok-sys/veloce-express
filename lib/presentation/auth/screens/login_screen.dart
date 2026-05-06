@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/settings/app_settings.dart';
-import '../../../core/utils/validators.dart';
 import '../../shared/widgets/shared_widgets.dart';
 import '../bloc/auth_bloc.dart';
 
@@ -66,7 +65,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         controller: _email,
                         hint: context.t('email'),
                         keyboardType: TextInputType.emailAddress,
-                        validator: Validators.email,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return context.t('field_required');
+                          }
+                          return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+                                  .hasMatch(v.trim())
+                              ? null
+                              : context.t('valid_email');
+                        },
                         prefixIcon: const Icon(Icons.mail_outline_rounded),
                       ),
                       const SizedBox(height: 12),
@@ -74,7 +81,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         controller: _password,
                         hint: context.t('password'),
                         obscureText: true,
-                        validator: Validators.password,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) {
+                            return context.t('field_required');
+                          }
+                          return v.length >= 6
+                              ? null
+                              : context.t('password_length');
+                        },
                         prefixIcon: const Icon(Icons.lock_outline_rounded),
                       ),
                       const SizedBox(height: 20),

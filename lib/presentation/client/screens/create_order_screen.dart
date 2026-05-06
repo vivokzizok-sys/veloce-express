@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
-import 'package:latlong2/latlong.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/settings/app_settings.dart';
-import '../../../core/services/location_service.dart';
 import '../../../core/utils/validators.dart';
 import '../../../domain/entities/order_entity.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../order/bloc/order_bloc.dart';
-import '../../shared/widgets/osm_map_widgets.dart';
 import '../../shared/widgets/shared_widgets.dart';
 
 class CreateOrderScreen extends StatefulWidget {
@@ -26,26 +22,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   final _formKey = GlobalKey<FormState>();
   final _phone = TextEditingController();
   final _description = TextEditingController();
-  final _pickupAddress = TextEditingController(text: 'Pinned pickup');
-  final _dropoffAddress = TextEditingController(text: 'Pinned drop-off');
-  LatLng _pickup = const LatLng(6.5244, 3.3792);
-  LatLng _dropoff = const LatLng(6.5350, 3.3950);
-  bool _editingPickup = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _seedLocation();
-  }
-
-  Future<void> _seedLocation() async {
-    final pos = await LocationService().getCurrentPosition();
-    if (pos == null || !mounted) return;
-    setState(() {
-      _pickup = LatLng(pos.latitude, pos.longitude);
-      _dropoff = LatLng(pos.latitude + 0.01, pos.longitude + 0.01);
-    });
-  }
+  final _pickupAddress = TextEditingController();
+  final _dropoffAddress = TextEditingController();
 
   @override
   void dispose() {
@@ -80,144 +58,84 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             ),
             title: Text(context.t('create_order')),
           ),
-          body: Column(
-            children: [
-              Expanded(
-                child: FlutterMap(
-                  options: MapOptions(
-                    initialCenter: _pickup,
-                    initialZoom: 14,
-                    onTap: (_, point) => setState(() {
-                      if (_editingPickup) {
-                        _pickup = point;
-                        _pickupAddress.text =
-                            'Pinned ${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}';
-                      } else {
-                        _dropoff = point;
-                        _dropoffAddress.text =
-                            'Pinned ${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}';
-                      }
-                    }),
+          body: SafeArea(
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.all(18),
+                children: [
+                  Text(context.t('pickup'), style: AppTextStyles.captionMedium),
+                  const SizedBox(height: 8),
+                  AppTextField(
+                    controller: _pickupAddress,
+                    hint: context.t('pickup_address'),
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? context.t('field_required')
+                        : null,
                   ),
-                  children: [
-                    const OsmTiles(),
-                    PolylineLayer(
-                      polylines: [
-                        Polyline(
-                          points: [_pickup, _dropoff],
-                          color: AppColors.accent,
-                          strokeWidth: 4,
-                        ),
-                      ],
-                    ),
-                    MarkerLayer(
-                      markers: [
-                        osmPinMarker(
-                          point: _pickup,
-                          color: AppColors.success,
-                          icon: Icons.trip_origin_rounded,
-                          label: 'Pickup',
-                        ),
-                        osmPinMarker(
-                          point: _dropoff,
-                          color: AppColors.error,
-                          icon: Icons.location_on_rounded,
-                          label: 'Drop-off',
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
-                decoration: BoxDecoration(
-                  color: AppColors.surface(context),
-                  border: Border(
-                    top: BorderSide(color: AppColors.border(context)),
+                  const SizedBox(height: 14),
+                  Text(context.t('dropoff'),
+                      style: AppTextStyles.captionMedium),
+                  const SizedBox(height: 8),
+                  AppTextField(
+                    controller: _dropoffAddress,
+                    hint: context.t('dropoff_address'),
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? context.t('field_required')
+                        : null,
                   ),
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SegmentedButton<bool>(
-                          segments: [
-                            ButtonSegment(
-                              value: true,
-                              icon: Icon(Icons.trip_origin_rounded),
-                              label: Text(context.t('pickup')),
+                  const SizedBox(height: 14),
+                  AppTextField(
+                    controller: _phone,
+                    hint: context.t('contact_phone'),
+                    keyboardType: TextInputType.phone,
+                    validator: (v) => Validators.phone(v) == null
+                        ? null
+                        : context.t('algerian_phone_error'),
+                  ),
+                  const SizedBox(height: 14),
+                  AppTextField(
+                    controller: _description,
+                    hint: context.t('describe_item'),
+                    maxLines: 3,
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? context.t('field_required')
+                        : null,
+                  ),
+                  const SizedBox(height: 18),
+                  PrimaryButton(
+                    label: context.t('publish_request'),
+                    isLoading: loading,
+                    onPressed: () {
+                      if (!_formKey.currentState!.validate()) return;
+                      final user =
+                          (context.read<AuthBloc>().state as AuthAuthenticated)
+                              .user;
+                      context.read<OrderBloc>().add(OrderCreateRequested(
+                            OrderEntity(
+                              orderId: '',
+                              clientId: user.uid,
+                              clientName: user.fullName,
+                              clientPhone: _phone.text.trim(),
+                              description: _description.text.trim(),
+                              pickupLocation: const LocationPoint(
+                                latitude: 0,
+                                longitude: 0,
+                              ),
+                              pickupAddress: _pickupAddress.text.trim(),
+                              dropoffLocation: const LocationPoint(
+                                latitude: 0,
+                                longitude: 0,
+                              ),
+                              dropoffAddress: _dropoffAddress.text.trim(),
+                              status: OrderStatus.open,
                             ),
-                            ButtonSegment(
-                              value: false,
-                              icon: Icon(Icons.location_on_outlined),
-                              label: Text(context.t('dropoff')),
-                            ),
-                          ],
-                          selected: {_editingPickup},
-                          onSelectionChanged: (set) =>
-                              setState(() => _editingPickup = set.first),
-                        ),
-                        const SizedBox(height: 10),
-                        AppTextField(
-                          controller: _phone,
-                          hint: context.t('contact_phone'),
-                          keyboardType: TextInputType.phone,
-                          validator: Validators.phone,
-                        ),
-                        const SizedBox(height: 10),
-                        AppTextField(
-                          controller: _description,
-                          hint: context.t('describe_item'),
-                          maxLines: 2,
-                          validator: (v) => Validators.required(v,
-                              label: context.t('description')),
-                        ),
-                        const SizedBox(height: 12),
-                        PrimaryButton(
-                          label: context.t('publish_request'),
-                          isLoading: loading,
-                          onPressed: () {
-                            if (!_formKey.currentState!.validate()) return;
-                            final user = (context.read<AuthBloc>().state
-                                    as AuthAuthenticated)
-                                .user;
-                            context.read<OrderBloc>().add(OrderCreateRequested(
-                                  OrderEntity(
-                                    orderId: '',
-                                    clientId: user.uid,
-                                    clientName: user.fullName,
-                                    clientPhone: _phone.text.trim(),
-                                    description: _description.text.trim(),
-                                    pickupLocation: LocationPoint(
-                                      latitude: _pickup.latitude,
-                                      longitude: _pickup.longitude,
-                                    ),
-                                    pickupAddress: _pickupAddress.text.trim(),
-                                    dropoffLocation: LocationPoint(
-                                      latitude: _dropoff.latitude,
-                                      longitude: _dropoff.longitude,
-                                    ),
-                                    dropoffAddress: _dropoffAddress.text.trim(),
-                                    status: OrderStatus.open,
-                                  ),
-                                ));
-                          },
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          context.t('tap_map_pin'),
-                          style: AppTextStyles.caption,
-                        ),
-                      ],
-                    ),
+                          ));
+                    },
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },

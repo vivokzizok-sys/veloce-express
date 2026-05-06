@@ -1,19 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
-import 'package:latlong2/latlong.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/settings/app_settings.dart';
-import '../../../core/utils/validators.dart';
 import '../../../data/models/order_model.dart';
-import '../../../domain/entities/order_entity.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../order/bloc/order_bloc.dart';
-import '../../shared/widgets/osm_map_widgets.dart';
 import '../../shared/widgets/shared_widgets.dart';
 
 class PlaceBidScreen extends StatefulWidget {
@@ -70,7 +65,6 @@ class _PlaceBidScreenState extends State<PlaceBidScreen> {
               return SafeArea(
                 child: Column(
                   children: [
-                    if (order != null) _OrderRouteMap(order: order),
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.all(24),
@@ -80,13 +74,7 @@ class _PlaceBidScreenState extends State<PlaceBidScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               if (order != null) ...[
-                                Text(order.description,
-                                    style: AppTextStyles.title3),
-                                const SizedBox(height: 8),
-                                Text(
-                                  '${order.pickupAddress} -> ${order.dropoffAddress}',
-                                  style: AppTextStyles.caption,
-                                ),
+                                _OrderRouteCard(order: order),
                                 const SizedBox(height: 18),
                               ],
                               AppTextField(
@@ -97,10 +85,10 @@ class _PlaceBidScreenState extends State<PlaceBidScreen> {
                                   decimal: true,
                                 ),
                                 validator: (value) {
-                                  final base = Validators.required(value,
-                                      label: context.t('amount'));
-                                  if (base != null) return base;
-                                  final amount = double.tryParse(value!);
+                                  if (value == null || value.trim().isEmpty) {
+                                    return context.t('field_required');
+                                  }
+                                  final amount = double.tryParse(value);
                                   return amount != null && amount > 0
                                       ? null
                                       : context.t('valid_amount');
@@ -145,57 +133,78 @@ class _PlaceBidScreenState extends State<PlaceBidScreen> {
   }
 }
 
-class _OrderRouteMap extends StatelessWidget {
-  final OrderEntity order;
+class _OrderRouteCard extends StatelessWidget {
+  final OrderModel order;
 
-  const _OrderRouteMap({required this.order});
+  const _OrderRouteCard({required this.order});
 
   @override
   Widget build(BuildContext context) {
-    final pickup = LatLng(
-      order.pickupLocation.latitude,
-      order.pickupLocation.longitude,
-    );
-    final dropoff = LatLng(
-      order.dropoffLocation.latitude,
-      order.dropoffLocation.longitude,
-    );
-    return SizedBox(
-      height: 260,
-      child: FlutterMap(
-        options: MapOptions(
-          initialCenter: pickup,
-          initialZoom: 14,
-        ),
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface(context),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const OsmTiles(),
-          PolylineLayer(
-            polylines: [
-              Polyline(
-                points: [pickup, dropoff],
-                color: AppColors.accent,
-                strokeWidth: 4,
-              ),
-            ],
+          Text(order.description, style: AppTextStyles.title3),
+          const SizedBox(height: 12),
+          _RouteLine(
+            icon: Icons.trip_origin_rounded,
+            color: AppColors.success,
+            label: context.t('pickup'),
+            value: order.pickupAddress,
           ),
-          MarkerLayer(
-            markers: [
-              osmPinMarker(
-                point: pickup,
-                color: AppColors.success,
-                icon: Icons.trip_origin_rounded,
-                label: 'Pickup',
-              ),
-              osmPinMarker(
-                point: dropoff,
-                color: AppColors.error,
-                icon: Icons.location_on_rounded,
-                label: 'Drop-off',
-              ),
-            ],
+          const SizedBox(height: 10),
+          _RouteLine(
+            icon: Icons.location_on_rounded,
+            color: AppColors.error,
+            label: context.t('dropoff'),
+            value: order.dropoffAddress,
           ),
         ],
       ),
+    );
+  }
+}
+
+class _RouteLine extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String value;
+
+  const _RouteLine({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 18),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: AppTextStyles.caption),
+              Text(
+                value,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textPrimary(context),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
