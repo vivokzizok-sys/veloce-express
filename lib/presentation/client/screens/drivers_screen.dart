@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -20,7 +22,7 @@ class DriversScreen extends StatelessWidget {
         leading: IconButton(
           tooltip: context.t('back'),
           icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.pop(),
+          onPressed: () => context.go('/client/home'),
         ),
         title: Text(context.t('choose_driver')),
       ),
@@ -77,14 +79,19 @@ class _DriverCard extends StatelessWidget {
           children: [
             CircleAvatar(
               backgroundColor: AppColors.driverRole.withOpacity(0.12),
-              child: Text(
-                driver.fullName.isNotEmpty
-                    ? driver.fullName[0].toUpperCase()
-                    : '?',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.driverRole,
-                ),
-              ),
+              backgroundImage: driver.profilePhotoBase64 == null
+                  ? null
+                  : MemoryImage(base64Decode(driver.profilePhotoBase64!)),
+              child: driver.profilePhotoBase64 != null
+                  ? null
+                  : Text(
+                      driver.fullName.isNotEmpty
+                          ? driver.fullName[0].toUpperCase()
+                          : '?',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.driverRole,
+                      ),
+                    ),
             ),
             const SizedBox(width: 12),
             Expanded(

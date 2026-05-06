@@ -134,7 +134,7 @@ class _ClientActiveTripBanner extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      '${context.t('return_active_trip')}: ${order.pickupAddress} -> ${order.dropoffAddress}',
+                      '${context.t('return_active_trip')}: ${order.dropoffAddress}',
                       style: AppTextStyles.captionMedium.copyWith(
                         color: AppColors.accent,
                       ),
@@ -200,7 +200,7 @@ class _OrderTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${order.pickupAddress} -> ${order.dropoffAddress}',
+                    order.dropoffAddress,
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.textSecondary(context),
                     ),

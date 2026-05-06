@@ -25,14 +25,12 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   final _formKey = GlobalKey<FormState>();
   final _phone = TextEditingController();
   final _description = TextEditingController();
-  final _pickupAddress = TextEditingController();
   final _dropoffAddress = TextEditingController();
 
   @override
   void dispose() {
     _phone.dispose();
     _description.dispose();
-    _pickupAddress.dispose();
     _dropoffAddress.dispose();
     super.dispose();
   }
@@ -83,35 +81,17 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                     _SelectedDriverCard(driver: widget.driver!),
                     const SizedBox(height: 18),
                   ],
-                  Text(context.t('pickup'), style: AppTextStyles.captionMedium),
-                  const SizedBox(height: 8),
-                  AppTextField(
-                    controller: _pickupAddress,
-                    hint: context.t('pickup_address'),
-                    validator: (v) {
-                      final text = v?.trim() ?? '';
-                      if (text.isEmpty) return context.t('field_required');
-                      return text.length >= 6
-                          ? null
-                          : context.t('address_too_short');
-                    },
-                  ),
-                  const SizedBox(height: 14),
-                  Text(context.t('dropoff'),
+                  Text(context.t('delivery_address'),
                       style: AppTextStyles.captionMedium),
                   const SizedBox(height: 8),
                   AppTextField(
                     controller: _dropoffAddress,
-                    hint: context.t('dropoff_address'),
+                    hint: context.t('delivery_address_hint'),
                     validator: (v) {
                       final text = v?.trim() ?? '';
                       if (text.isEmpty) return context.t('field_required');
                       if (text.length < 6)
                         return context.t('address_too_short');
-                      if (text.toLowerCase() ==
-                          _pickupAddress.text.trim().toLowerCase()) {
-                        return context.t('addresses_must_differ');
-                      }
                       return null;
                     },
                   ),
@@ -157,7 +137,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                                 latitude: 0,
                                 longitude: 0,
                               ),
-                              pickupAddress: _pickupAddress.text.trim(),
+                              pickupAddress: '',
                               dropoffLocation: const LocationPoint(
                                 latitude: 0,
                                 longitude: 0,

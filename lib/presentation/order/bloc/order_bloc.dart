@@ -103,13 +103,22 @@ class OrdersLoaded extends OrderState {
   final List<OrderEntity> orders;
   const OrdersLoaded(this.orders);
   @override
-  List<Object?> get props =>
-      [orders.length, orders.map((e) => e.orderId).join()];
+  List<Object?> get props => [
+        for (final order in orders)
+          '${order.orderId}:${order.status.name}:${order.clientRating}:${order.acceptedBidAmount}'
+      ];
 }
 
 class SingleOrderLoaded extends OrderState {
   final OrderEntity? order;
   const SingleOrderLoaded(this.order);
+  @override
+  List<Object?> get props => [
+        order?.orderId,
+        order?.status,
+        order?.clientRating,
+        order?.acceptedBidAmount,
+      ];
 }
 
 class BidsLoaded extends OrderState {

@@ -119,6 +119,14 @@ class _SupportScreenState extends State<SupportScreen> {
                   label: '${context.t('order')}: ${widget.orderId}',
                 ),
               ],
+              if (widget.reportedUserId != null) ...[
+                const SizedBox(height: 14),
+                _InfoPill(
+                  icon: Icons.person_off_outlined,
+                  label:
+                      '${context.t('reported_user')}: ${widget.reportedUserId}',
+                ),
+              ],
               const SizedBox(height: 14),
               AppTextField(
                 controller: _message,
@@ -138,10 +146,113 @@ class _SupportScreenState extends State<SupportScreen> {
                 onPressed: _submit,
                 icon: const Icon(Icons.send_rounded, size: 18),
               ),
+              const SizedBox(height: 24),
+              _MyTickets(userId: user.uid),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _MyTickets extends StatelessWidget {
+  final String userId;
+
+  const _MyTickets({required this.userId});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('support_tickets')
+          .where('createdBy', isEqualTo: userId)
+          .limit(20)
+          .snapshots(),
+      builder: (context, snap) {
+        final docs = snap.data?.docs ?? [];
+        if (docs.isEmpty) return const SizedBox.shrink();
+        docs.sort((a, b) {
+          final at = a.data()['createdAt'] as Timestamp?;
+          final bt = b.data()['createdAt'] as Timestamp?;
+          return (bt?.millisecondsSinceEpoch ?? 0)
+              .compareTo(at?.millisecondsSinceEpoch ?? 0);
+        });
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(context.t('my_tickets'), style: AppTextStyles.title3),
+            const SizedBox(height: 10),
+            for (final doc in docs.take(6)) _TicketPreview(data: doc.data()),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _TicketPreview extends StatelessWidget {
+  final Map<String, dynamic> data;
+
+  const _TicketPreview({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final message = data['message'] as String? ?? '';
+    final reply = data['adminReply'] as String?;
+    final status = data['status'] as String? ?? 'open';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface(context),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border(context)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Expanded(
+            child: Text(
+              context.statusText(status),
+              style: AppTextStyles.captionMedium.copyWith(
+                color: AppColors.textPrimary(context),
+              ),
+            ),
+          ),
+          Icon(
+            status == 'open'
+                ? Icons.hourglass_bottom_rounded
+                : Icons.check_circle_outline_rounded,
+            size: 18,
+            color: status == 'open' ? AppColors.warning : AppColors.success,
+          ),
+        ]),
+        const SizedBox(height: 6),
+        Text(
+          message,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: AppTextStyles.caption.copyWith(
+            color: AppColors.textSecondary(context),
+          ),
+        ),
+        if (reply != null && reply.trim().isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Text(
+            context.t('admin_reply'),
+            style: AppTextStyles.captionMedium.copyWith(
+              color: AppColors.textPrimary(context),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            reply,
+            style: AppTextStyles.body.copyWith(
+              color: AppColors.textPrimary(context),
+            ),
+          ),
+        ],
+      ]),
     );
   }
 }

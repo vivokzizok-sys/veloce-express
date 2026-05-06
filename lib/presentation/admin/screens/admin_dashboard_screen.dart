@@ -464,7 +464,7 @@ class _OrdersTabState extends State<_OrdersTab> {
                 if (search.isEmpty) return true;
                 final data = doc.data() as Map<String, dynamic>;
                 final text =
-                    '${doc.id} ${data['description']} ${data['pickupAddress']} ${data['dropoffAddress']} ${data['clientName']}'
+                    '${doc.id} ${data['description']} ${data['dropoffAddress']} ${data['clientName']}'
                         .toLowerCase();
                 return text.contains(search);
               }).toList();
@@ -583,10 +583,15 @@ class _UsersTabState extends State<_UsersTab> {
 
   @override
   Widget build(BuildContext context) {
-    Query query = widget.db
-        .collection('users')
-        .orderBy('createdAt', descending: true)
-        .limit(100);
+    Query query = _roleFilter == 'all'
+        ? widget.db
+            .collection('users')
+            .orderBy('createdAt', descending: true)
+            .limit(150)
+        : widget.db
+            .collection('users')
+            .where('role', isEqualTo: _roleFilter)
+            .limit(150);
 
     return Column(
       children: [
@@ -637,11 +642,7 @@ class _UsersTabState extends State<_UsersTab> {
               if (snap.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
-              final docs = (snap.data?.docs ?? []).where((doc) {
-                if (_roleFilter == 'all') return true;
-                final data = doc.data() as Map<String, dynamic>;
-                return data['role'] == _roleFilter;
-              }).toList();
+              final docs = snap.data?.docs ?? [];
 
               if (docs.isEmpty) {
                 return _EmptyAdminState(
@@ -684,6 +685,7 @@ class _UserRow extends StatelessWidget {
     final isApproved = data['isApproved'] as bool? ?? false;
     final rating = (data['rating'] as num?)?.toDouble() ?? 0.0;
     final deliveries = data['totalDeliveries'] as int? ?? 0;
+    final profilePhotoBase64 = data['profilePhotoBase64'] as String?;
 
     final roleColor = role == 'driver'
         ? AppColors.driverRole
@@ -700,19 +702,19 @@ class _UserRow extends StatelessWidget {
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Row(children: [
-        // Avatar
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: roleColor.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-              child: Text(
-            name.isNotEmpty ? name[0].toUpperCase() : '?',
-            style: AppTextStyles.bodyMedium.copyWith(color: roleColor),
-          )),
+        CircleAvatar(
+          radius: 20,
+          backgroundColor: roleColor.withOpacity(0.1),
+          backgroundImage:
+              profilePhotoBase64 == null || profilePhotoBase64.isEmpty
+                  ? null
+                  : MemoryImage(base64Decode(profilePhotoBase64)),
+          child: profilePhotoBase64 != null && profilePhotoBase64.isNotEmpty
+              ? null
+              : Text(
+                  name.isNotEmpty ? name[0].toUpperCase() : '?',
+                  style: AppTextStyles.bodyMedium.copyWith(color: roleColor),
+                ),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -728,6 +730,18 @@ class _UserRow extends StatelessWidget {
               Text(
                   '⭐ ${rating.toStringAsFixed(1)} · $deliveries ${context.t('trips_label')}',
                   style: AppTextStyles.caption),
+            if (role == 'driver')
+              TextButton.icon(
+                onPressed: () => _showDriverComments(context, db, uid),
+                icon: const Icon(Icons.rate_review_outlined, size: 16),
+                label: Text(context.t('comments')),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.accent,
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
           ],
         )),
 
@@ -773,6 +787,150 @@ class _UserRow extends StatelessWidget {
 }
 
 // ── Shared Empty State ────────────────────────────────────────
+
+void _showDriverComments(
+  BuildContext context,
+  FirebaseFirestore db,
+  String driverId,
+) {
+  showModalBottomSheet(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    backgroundColor: AppColors.surface(context),
+    builder: (_) => AppSettingsScope(
+      controller: context.settings,
+      child: _DriverCommentsSheet(db: db, driverId: driverId),
+    ),
+  );
+}
+
+class _DriverCommentsSheet extends StatelessWidget {
+  final FirebaseFirestore db;
+  final String driverId;
+
+  const _DriverCommentsSheet({
+    required this.db,
+    required this.driverId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.72,
+        child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: db
+              .collection('orders')
+              .where('driverId', isEqualTo: driverId)
+              .where('status', isEqualTo: 'delivered')
+              .orderBy('createdAt', descending: true)
+              .limit(50)
+              .snapshots(),
+          builder: (context, snap) {
+            if (snap.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final docs = (snap.data?.docs ?? []).where((doc) {
+              final data = doc.data();
+              return ((data['clientRatingComment'] as String?)
+                      ?.trim()
+                      .isNotEmpty ??
+                  false);
+            }).toList();
+
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+              children: [
+                Text(context.t('comments'), style: AppTextStyles.title2),
+                const SizedBox(height: 12),
+                if (docs.isEmpty)
+                  Text(
+                    context.t('no_comments'),
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.textSecondary(context),
+                    ),
+                  )
+                else
+                  for (final doc in docs)
+                    _AdminCommentRow(
+                      orderId: doc.id,
+                      data: doc.data(),
+                      onDelete: () =>
+                          db.collection('orders').doc(doc.id).update({
+                        'clientRatingComment': null,
+                        'commentDeletedByAdmin': true,
+                        'commentDeletedAt': FieldValue.serverTimestamp(),
+                        'updatedAt': FieldValue.serverTimestamp(),
+                      }),
+                    ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _AdminCommentRow extends StatelessWidget {
+  final String orderId;
+  final Map<String, dynamic> data;
+  final VoidCallback onDelete;
+
+  const _AdminCommentRow({
+    required this.orderId,
+    required this.data,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final comment = data['clientRatingComment'] as String? ?? '';
+    final clientName = data['clientName'] as String? ?? context.t('client');
+    final rating = (data['clientRating'] as num?)?.toDouble() ?? 0;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt(context),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Expanded(
+            child: Text(
+              '$clientName - ${rating.toStringAsFixed(1)}',
+              style: AppTextStyles.captionMedium.copyWith(
+                color: AppColors.textPrimary(context),
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: context.t('delete_comment'),
+            onPressed: onDelete,
+            icon: const Icon(Icons.delete_outline_rounded),
+            color: AppColors.error,
+          ),
+        ]),
+        Text(
+          comment,
+          style: AppTextStyles.body.copyWith(
+            color: AppColors.textPrimary(context),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          '${context.t('order')}: ${orderId.substring(0, 8).toUpperCase()}',
+          style: AppTextStyles.caption.copyWith(
+            color: AppColors.textSecondary(context),
+          ),
+        ),
+      ]),
+    );
+  }
+}
 
 class _TicketsTab extends StatelessWidget {
   final FirebaseFirestore db;
@@ -829,9 +987,11 @@ class _TicketCard extends StatelessWidget {
     final type = data['type'] as String? ?? 'support';
     final status = data['status'] as String? ?? 'open';
     final name = data['createdByName'] as String? ?? context.t('unknown');
+    final createdBy = data['createdBy'] as String?;
     final message = data['message'] as String? ?? '';
     final orderId = data['orderId'] as String?;
     final reportedUserId = data['reportedUserId'] as String?;
+    final adminReply = data['adminReply'] as String?;
     final isOpen = status == 'open';
 
     return Container(
@@ -884,26 +1044,125 @@ class _TicketCard extends StatelessWidget {
               ],
             ),
           ],
+          if (createdBy != null) ...[
+            const SizedBox(height: 8),
+            _MiniMeta(label: '${context.t('reported_by')}: $createdBy'),
+          ],
+          if (adminReply != null && adminReply.trim().isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceAlt(context),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.t('admin_reply'),
+                    style: AppTextStyles.captionMedium.copyWith(
+                      color: AppColors.textPrimary(context),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    adminReply,
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.textPrimary(context),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (isOpen) ...[
             const SizedBox(height: 12),
-            Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: TextButton.icon(
-                onPressed: () =>
-                    db.collection('support_tickets').doc(ticketId).update({
-                  'status': 'closed',
-                  'closedAt': FieldValue.serverTimestamp(),
-                  'updatedAt': FieldValue.serverTimestamp(),
-                }),
-                icon: const Icon(Icons.check_circle_outline_rounded),
-                label: Text(context.t('close_ticket')),
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: createdBy == null
+                      ? null
+                      : () => _replyToTicket(
+                            context,
+                            db,
+                            ticketId: ticketId,
+                            userId: createdBy,
+                          ),
+                  icon: const Icon(Icons.reply_rounded),
+                  label: Text(context.t('reply')),
+                ),
+                TextButton.icon(
+                  onPressed: () =>
+                      db.collection('support_tickets').doc(ticketId).update({
+                    'status': 'closed',
+                    'closedAt': FieldValue.serverTimestamp(),
+                    'updatedAt': FieldValue.serverTimestamp(),
+                  }),
+                  icon: const Icon(Icons.check_circle_outline_rounded),
+                  label: Text(context.t('close_ticket')),
+                ),
+              ],
             ),
           ],
         ],
       ),
     );
   }
+}
+
+Future<void> _replyToTicket(
+  BuildContext context,
+  FirebaseFirestore db, {
+  required String ticketId,
+  required String userId,
+}) async {
+  final controller = TextEditingController();
+  final reply = await showDialog<String>(
+    context: context,
+    builder: (dialogContext) => AppSettingsScope(
+      controller: context.settings,
+      child: AlertDialog(
+        title: Text(context.t('reply')),
+        content: TextField(
+          controller: controller,
+          minLines: 3,
+          maxLines: 5,
+          decoration: InputDecoration(hintText: context.t('admin_reply')),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(context.t('cancel')),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(dialogContext, controller.text.trim()),
+            child: Text(context.t('send')),
+          ),
+        ],
+      ),
+    ),
+  );
+  controller.dispose();
+  if (reply == null || reply.isEmpty) return;
+
+  await db.collection('support_tickets').doc(ticketId).update({
+    'adminReply': reply,
+    'adminRepliedAt': FieldValue.serverTimestamp(),
+    'updatedAt': FieldValue.serverTimestamp(),
+  });
+  await db.collection('notifications').add({
+    'userId': userId,
+    'type': 'support_reply',
+    'title': 'Support reply',
+    'body': reply,
+    'createdBy': 'admin',
+    'read': false,
+    'createdAt': FieldValue.serverTimestamp(),
+  });
 }
 
 class _MiniMeta extends StatelessWidget {

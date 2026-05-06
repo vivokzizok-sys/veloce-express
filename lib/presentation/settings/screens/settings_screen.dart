@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
@@ -173,10 +176,17 @@ class _ProfileHeader extends StatelessWidget {
           CircleAvatar(
             radius: 28,
             backgroundColor: roleColor.withOpacity(0.12),
-            child: Text(
-              user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : '?',
-              style: AppTextStyles.title2.copyWith(color: roleColor),
-            ),
+            backgroundImage: user.profilePhotoBase64 == null
+                ? null
+                : MemoryImage(base64Decode(user.profilePhotoBase64!)),
+            child: user.profilePhotoBase64 != null
+                ? null
+                : Text(
+                    user.fullName.isNotEmpty
+                        ? user.fullName[0].toUpperCase()
+                        : '?',
+                    style: AppTextStyles.title2.copyWith(color: roleColor),
+                  ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -233,6 +243,7 @@ class _AccountSettingsSheetState extends State<_AccountSettingsSheet> {
   late final TextEditingController _email;
   late final TextEditingController _phone;
   final _password = TextEditingController();
+  String? _profilePhotoBase64;
   bool _loading = false;
 
   @override
@@ -241,6 +252,7 @@ class _AccountSettingsSheetState extends State<_AccountSettingsSheet> {
     _name = TextEditingController(text: widget.user.fullName);
     _email = TextEditingController(text: widget.user.email);
     _phone = TextEditingController(text: widget.user.phoneNumber);
+    _profilePhotoBase64 = widget.user.profilePhotoBase64;
   }
 
   @override
@@ -274,10 +286,12 @@ class _AccountSettingsSheetState extends State<_AccountSettingsSheet> {
         'fullName': _name.text.trim(),
         'phoneNumber': _phone.text.trim(),
         'email': newEmail,
+        'profilePhotoBase64': _profilePhotoBase64,
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
       if (!mounted) return;
+      context.read<AuthBloc>().add(AuthRefreshRequested());
       Navigator.pop(context);
       messenger.showSnackBar(SnackBar(content: Text(savedText)));
     } on FirebaseAuthException catch (e) {
@@ -291,6 +305,25 @@ class _AccountSettingsSheetState extends State<_AccountSettingsSheet> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _pickProfilePhoto() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 55,
+      maxWidth: 700,
+      maxHeight: 700,
+    );
+    if (picked == null) return;
+    final bytes = await picked.readAsBytes();
+    if (bytes.length > 450 * 1024) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.t('image_too_large'))),
+      );
+      return;
+    }
+    setState(() => _profilePhotoBase64 = base64Encode(bytes));
   }
 
   @override
@@ -310,6 +343,23 @@ class _AccountSettingsSheetState extends State<_AccountSettingsSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(context.t('account_info'), style: AppTextStyles.title2),
+                const SizedBox(height: 16),
+                Center(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(48),
+                    onTap: _pickProfilePhoto,
+                    child: CircleAvatar(
+                      radius: 42,
+                      backgroundColor: AppColors.surfaceAlt(context),
+                      backgroundImage: _profilePhotoBase64 == null
+                          ? null
+                          : MemoryImage(base64Decode(_profilePhotoBase64!)),
+                      child: _profilePhotoBase64 != null
+                          ? null
+                          : const Icon(Icons.add_a_photo_outlined),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 16),
                 AppTextField(
                   controller: _name,

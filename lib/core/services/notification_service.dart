@@ -12,10 +12,10 @@ class NotificationService {
         _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
   static const _channel = AndroidNotificationChannel(
-    'veloce_express_default',
+    'veloce_express_alerts_v2',
     'Veloce Express',
     description: 'Trip, bid, and account notifications.',
-    importance: Importance.high,
+    importance: Importance.max,
     playSound: true,
     enableVibration: true,
   );
@@ -47,10 +47,11 @@ class NotificationService {
         _channel.id,
         _channel.name,
         channelDescription: _channel.description,
-        importance: Importance.high,
-        priority: Priority.high,
+        importance: Importance.max,
+        priority: Priority.max,
         playSound: true,
         enableVibration: true,
+        category: AndroidNotificationCategory.message,
         icon: '@mipmap/ic_launcher',
       ),
     );
@@ -75,15 +76,14 @@ class NotificationService {
         .limit(25)
         .snapshots()
         .listen((snapshot) async {
-      if (!_initializedSnapshot) {
-        _initializedSnapshot = true;
-        return;
-      }
-
       for (final change in snapshot.docChanges) {
+        if (!_initializedSnapshot && change.doc.metadata.hasPendingWrites) {
+          continue;
+        }
         if (change.type != DocumentChangeType.added) continue;
         final data = change.doc.data();
         if (data == null) continue;
+        if (data['read'] == true) continue;
 
         final title = data['title'] as String? ?? 'Veloce Express';
         final body = data['body'] as String? ?? '';
@@ -98,6 +98,7 @@ class NotificationService {
           'readAt': FieldValue.serverTimestamp(),
         });
       }
+      _initializedSnapshot = true;
     }, onError: (Object error, StackTrace stackTrace) {
       debugPrint('Notification listener error: $error');
     });

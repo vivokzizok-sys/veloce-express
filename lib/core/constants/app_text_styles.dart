@@ -95,9 +95,18 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: AppTextStyles.title3,
+        titleTextStyle: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0,
+          color: AppColors.black,
+        ),
         iconTheme: IconThemeData(color: AppColors.black),
       ),
+      textTheme: ThemeData.light().textTheme.apply(
+            bodyColor: AppColors.black,
+            displayColor: AppColors.black,
+          ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.grey50,
@@ -135,7 +144,18 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
+        titleTextStyle: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0,
+          color: Color(0xFFF5F7FA),
+        ),
+        iconTheme: IconThemeData(color: Color(0xFFF5F7FA)),
       ),
+      textTheme: ThemeData.dark().textTheme.apply(
+            bodyColor: const Color(0xFFF5F7FA),
+            displayColor: const Color(0xFFF5F7FA),
+          ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: const Color(0xFF1B2026),

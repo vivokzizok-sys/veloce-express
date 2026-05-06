@@ -92,7 +92,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen>
             state.driverLng != null) {
           _updateDriverMarker(state.driverLat!, state.driverLng!);
         }
-        if (state is TrackingDelivered) {
+        if (state is TrackingDeliveryConfirmed) {
           if (_isDriver) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(context.t('trip_completed'))),
@@ -111,8 +111,12 @@ class _ActiveTripScreenState extends State<ActiveTripScreen>
       },
       builder: (context, state) {
         final loading = state is TrackingLoading;
-        return WillPopScope(
-          onWillPop: () => _confirmExit(context),
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) {
+            if (didPop) return;
+            context.go(_isDriver ? '/driver/home' : '/client/home');
+          },
           child: Scaffold(
             backgroundColor: AppColors.page(context),
             body: Stack(
@@ -125,12 +129,8 @@ class _ActiveTripScreenState extends State<ActiveTripScreen>
                         child: _TopStatusBar(
                           order: widget.order,
                           pulseCtrl: _pulseCtrl,
-                          onBack: () async {
-                            final leave = await _confirmExit(context);
-                            if (!context.mounted || !leave) return;
-                            context.go(
-                                _isDriver ? '/driver/home' : '/client/home');
-                          },
+                          onBack: () => context
+                              .go(_isDriver ? '/driver/home' : '/client/home'),
                         ),
                       ),
                       Expanded(
@@ -157,7 +157,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen>
                               : widget.otherParty.phoneNumber,
                         ),
                         onComplete:
-                            !_isDriver ? () => _confirmTrip(context) : null,
+                            _isDriver ? () => _confirmTrip(context) : null,
                       ),
                     ],
                   ),
@@ -212,28 +212,6 @@ class _ActiveTripScreenState extends State<ActiveTripScreen>
         },
       ),
     );
-  }
-
-  Future<bool> _confirmExit(BuildContext context) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(context.t('leave_active_trip')),
-        content: Text(context.t('leave_active_trip_body')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(context.t('stay')),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(context.t('leave')),
-          ),
-        ],
-      ),
-    );
-    return result ?? false;
   }
 }
 
@@ -358,16 +336,9 @@ class _TripRouteOverview extends StatelessWidget {
           Text(context.t('return_active_trip'), style: AppTextStyles.title2),
           const SizedBox(height: 18),
           _RouteRow(
-            icon: Icons.trip_origin_rounded,
-            color: AppColors.success,
-            label: context.t('from'),
-            address: order.pickupAddress,
-          ),
-          const SizedBox(height: 12),
-          _RouteRow(
             icon: Icons.location_on_rounded,
             color: AppColors.error,
-            label: context.t('to'),
+            label: context.t('delivery_address'),
             address: order.dropoffAddress,
           ),
           if (driverLat != null && driverLng != null) ...[
@@ -474,16 +445,9 @@ class _BottomPanel extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _RouteRow(
-              icon: Icons.trip_origin_rounded,
-              color: AppColors.success,
-              label: context.t('from'),
-              address: order.pickupAddress,
-            ),
-            const SizedBox(height: 8),
-            _RouteRow(
               icon: Icons.location_on_rounded,
               color: AppColors.error,
-              label: context.t('to'),
+              label: context.t('delivery_address'),
               address: order.dropoffAddress,
             ),
             if (order.acceptedBidAmount != null) ...[

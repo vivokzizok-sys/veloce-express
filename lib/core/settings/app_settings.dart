@@ -98,7 +98,7 @@ class AppStrings {
     'privacy_4':
         'Users can request support or report a problem from inside the app. Admins can review tickets to protect the service.',
     'terms_1':
-        'Users must provide correct account, phone, pickup, and drop-off information.',
+        'Users must provide correct account, phone, delivery address, and order information.',
     'terms_2':
         'Drivers are responsible for submitting realistic bids and confirming delivery only after handing the item to the client.',
     'terms_3':
@@ -177,6 +177,8 @@ class AppStrings {
     'publish_request': 'Publish Request',
     'pickup_address': 'Pickup address',
     'dropoff_address': 'Drop-off address',
+    'delivery_address': 'Delivery address',
+    'delivery_address_hint': 'Where should the order be delivered?',
     'active_trip_missing': 'Trip data missing',
     'page_not_found': 'Page not found',
     'open_dashboard': 'Open dashboard',
@@ -240,7 +242,7 @@ class AppStrings {
     'cancelled_by': 'Cancelled by',
     'order_cancelled': 'Order cancelled.',
     'address_too_short': 'Write a clearer address',
-    'addresses_must_differ': 'Pickup and drop-off must be different',
+    'addresses_must_differ': 'Write a clear delivery address',
     'rate_experience': 'Rate your experience',
     'how_was': 'How was',
     'submit_rating': 'Submit Rating',
@@ -280,6 +282,16 @@ class AppStrings {
     'close_ticket': 'Close ticket',
     'search': 'Search',
     'reported_user': 'Reported user',
+    'reported_by': 'Reported by',
+    'reply': 'Reply',
+    'admin_reply': 'Admin reply',
+    'my_tickets': 'My tickets',
+    'reviews': 'Reviews',
+    'no_reviews': 'No reviews yet.',
+    'comments': 'Comments',
+    'no_comments': 'No comments yet.',
+    'delete_comment': 'Delete comment',
+    'image_too_large': 'Image is too large. Choose a smaller photo.',
   };
 
   static const _ar = <String, String>{
@@ -389,6 +401,8 @@ class AppStrings {
     'publish_request': 'نشر الطلب',
     'pickup_address': 'مكان الانطلاق',
     'dropoff_address': 'مكان الوصول',
+    'delivery_address': 'مكان التوصيل',
+    'delivery_address_hint': 'أين تريد توصيل الطلب؟',
     'active_trip_missing': 'بيانات الرحلة غير موجودة',
     'page_not_found': 'الصفحة غير موجودة',
     'open_dashboard': 'فتح لوحة الإحصائيات',
@@ -491,6 +505,21 @@ class AppStrings {
     'close_ticket': 'إغلاق التذكرة',
     'search': 'بحث',
     'reported_user': 'المستخدم المبلغ عنه',
+    'reported_by':
+        '\u0623\u0628\u0644\u063a \u0628\u0648\u0627\u0633\u0637\u0629',
+    'reply': '\u0631\u062f',
+    'admin_reply': '\u0631\u062f \u0627\u0644\u0623\u062f\u0645\u0646',
+    'my_tickets': '\u062a\u0630\u0627\u0643\u0631\u064a',
+    'reviews': '\u0627\u0644\u062a\u0639\u0644\u064a\u0642\u0627\u062a',
+    'no_reviews':
+        '\u0644\u0627 \u062a\u0648\u062c\u062f \u062a\u0639\u0644\u064a\u0642\u0627\u062a \u0628\u0639\u062f.',
+    'comments': '\u0627\u0644\u062a\u0639\u0644\u064a\u0642\u0627\u062a',
+    'no_comments':
+        '\u0644\u0627 \u062a\u0648\u062c\u062f \u062a\u0639\u0644\u064a\u0642\u0627\u062a \u0628\u0639\u062f.',
+    'delete_comment':
+        '\u062d\u0630\u0641 \u0627\u0644\u062a\u0639\u0644\u064a\u0642',
+    'image_too_large':
+        '\u0627\u0644\u0635\u0648\u0631\u0629 \u0643\u0628\u064a\u0631\u0629. \u0627\u062e\u062a\u0631 \u0635\u0648\u0631\u0629 \u0623\u0635\u063a\u0631.',
   };
 
   static String translate(AppLanguage language, String key) {

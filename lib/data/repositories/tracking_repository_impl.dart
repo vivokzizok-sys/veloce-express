@@ -53,11 +53,28 @@ class TrackingRepositoryImpl implements TrackingRepository {
   @override
   Future<Either<Failure, void>> startTrip(String orderId) async {
     try {
-      await _db.collection('orders').doc(orderId).update({
+      final orderRef = _db.collection('orders').doc(orderId);
+      await orderRef.update({
         'status': 'inProgress',
         'startedAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
+      final order = await orderRef.get();
+      final data = order.data();
+      final clientId = data?['clientId'] as String?;
+      final driverId = data?['driverId'] as String?;
+      if (clientId != null) {
+        await _db.collection('notifications').add({
+          'userId': clientId,
+          'orderId': orderId,
+          'type': 'trip_started',
+          'title': 'Delivery started',
+          'body': 'Your driver started the delivery.',
+          'createdBy': driverId,
+          'read': false,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
       return const Right(null);
     } on FirebaseException catch (e) {
       return Left(NetworkFailure(e.message ?? 'Failed to start trip'));
@@ -67,11 +84,28 @@ class TrackingRepositoryImpl implements TrackingRepository {
   @override
   Future<Either<Failure, void>> completeDelivery(String orderId) async {
     try {
-      await _db.collection('orders').doc(orderId).update({
+      final orderRef = _db.collection('orders').doc(orderId);
+      await orderRef.update({
         'status': 'delivered',
         'deliveredAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
+      final order = await orderRef.get();
+      final data = order.data();
+      final clientId = data?['clientId'] as String?;
+      final driverId = data?['driverId'] as String?;
+      if (clientId != null) {
+        await _db.collection('notifications').add({
+          'userId': clientId,
+          'orderId': orderId,
+          'type': 'delivered',
+          'title': 'Delivery completed',
+          'body': 'Your order was marked as delivered. Please rate the driver.',
+          'createdBy': driverId,
+          'read': false,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
       return const Right(null);
     } on FirebaseException catch (e) {
       return Left(NetworkFailure(e.message ?? 'Failed to complete trip'));

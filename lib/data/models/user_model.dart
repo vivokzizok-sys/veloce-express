@@ -13,6 +13,7 @@ class UserModel extends UserEntity {
     required super.isEmailVerified,
     required super.isApproved,
     super.vehicleType,
+    super.profilePhotoBase64,
     super.vehiclePhotoBase64,
     super.vehiclePhotoContentType,
     super.rating,
@@ -32,6 +33,7 @@ class UserModel extends UserEntity {
       isEmailVerified: data['isEmailVerified'] as bool? ?? false,
       isApproved: data['isApproved'] as bool? ?? false,
       vehicleType: VehicleTypeX.fromString(data['vehicleType'] as String?),
+      profilePhotoBase64: data['profilePhotoBase64'] as String?,
       vehiclePhotoBase64: data['vehiclePhotoBase64'] as String?,
       vehiclePhotoContentType:
           data['vehiclePhotoContentType'] as String? ?? 'image/jpeg',
@@ -52,6 +54,7 @@ class UserModel extends UserEntity {
       'isEmailVerified': isEmailVerified,
       'isApproved': isApproved,
       'vehicleType': vehicleType?.name,
+      'profilePhotoBase64': profilePhotoBase64,
       'vehiclePhotoBase64': vehiclePhotoBase64,
       'vehiclePhotoContentType': vehiclePhotoContentType,
       'rating': rating,

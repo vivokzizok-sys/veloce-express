@@ -183,16 +183,9 @@ class _OrderRouteCard extends StatelessWidget {
           Text(order.description, style: AppTextStyles.title3),
           const SizedBox(height: 12),
           _RouteLine(
-            icon: Icons.trip_origin_rounded,
-            color: AppColors.success,
-            label: context.t('pickup'),
-            value: order.pickupAddress,
-          ),
-          const SizedBox(height: 10),
-          _RouteLine(
             icon: Icons.location_on_rounded,
             color: AppColors.error,
-            label: context.t('dropoff'),
+            label: context.t('delivery_address'),
             value: order.dropoffAddress,
           ),
         ],

@@ -51,6 +51,7 @@ service cloud.firestore {
             'phoneNumber',
             'email',
             'isEmailVerified',
+            'profilePhotoBase64',
             'currentLocation',
             'locationUpdatedAt',
             'updatedAt'
@@ -251,7 +252,14 @@ service cloud.firestore {
       allow update: if isAdmin()
         && request.resource.data.diff(resource.data)
           .affectedKeys()
-          .hasOnly(['status', 'adminNote', 'updatedAt', 'closedAt']);
+          .hasOnly([
+            'status',
+            'adminNote',
+            'adminReply',
+            'adminRepliedAt',
+            'updatedAt',
+            'closedAt'
+          ]);
 
       allow delete: if isAdmin();
     }

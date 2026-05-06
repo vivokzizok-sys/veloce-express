@@ -65,21 +65,43 @@ class AuthEmailUnverified extends AuthState {
   final UserEntity user;
   const AuthEmailUnverified(this.user);
   @override
-  List<Object?> get props => [user.uid, user.isEmailVerified];
+  List<Object?> get props => [
+        user.uid,
+        user.isEmailVerified,
+        user.fullName,
+        user.phoneNumber,
+        user.profilePhotoBase64,
+      ];
 }
 
 class AuthPendingApproval extends AuthState {
   final UserEntity user;
   const AuthPendingApproval(this.user);
   @override
-  List<Object?> get props => [user.uid, user.isApproved];
+  List<Object?> get props => [
+        user.uid,
+        user.isApproved,
+        user.fullName,
+        user.phoneNumber,
+        user.profilePhotoBase64,
+      ];
 }
 
 class AuthAuthenticated extends AuthState {
   final UserEntity user;
   const AuthAuthenticated(this.user);
   @override
-  List<Object?> get props => [user.uid, user.role, user.isApproved];
+  List<Object?> get props => [
+        user.uid,
+        user.role,
+        user.isApproved,
+        user.fullName,
+        user.phoneNumber,
+        user.email,
+        user.profilePhotoBase64,
+        user.rating,
+        user.totalDeliveries,
+      ];
 }
 
 class AuthFailureState extends AuthState {

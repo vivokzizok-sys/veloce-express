@@ -295,13 +295,7 @@ class _OrderSummary extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          Text(context.t('from'), style: AppTextStyles.caption),
-          Text(order.pickupAddress,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textPrimary(context),
-              )),
-          const SizedBox(height: 10),
-          Text(context.t('to'), style: AppTextStyles.caption),
+          Text(context.t('delivery_address'), style: AppTextStyles.caption),
           Text(order.dropoffAddress,
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textPrimary(context),

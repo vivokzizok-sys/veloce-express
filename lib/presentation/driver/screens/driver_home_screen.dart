@@ -134,7 +134,7 @@ class _DriverActiveTripBanner extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      '${context.t('active_trip')}: ${order.pickupAddress} -> ${order.dropoffAddress}',
+                      '${context.t('active_trip')}: ${order.dropoffAddress}',
                       style: AppTextStyles.captionMedium.copyWith(
                         color: AppColors.accent,
                       ),
@@ -185,10 +185,7 @@ class _JobTile extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
-            Text(context.t('pickup'), style: AppTextStyles.caption),
-            Text(order.pickupAddress, style: AppTextStyles.bodyMedium),
-            const SizedBox(height: 8),
-            Text(context.t('dropoff'), style: AppTextStyles.caption),
+            Text(context.t('delivery_address'), style: AppTextStyles.caption),
             Text(order.dropoffAddress, style: AppTextStyles.bodyMedium),
           ],
         ),

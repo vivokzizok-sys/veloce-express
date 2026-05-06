@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -20,7 +23,7 @@ class DriverProfileScreen extends StatelessWidget {
         leading: IconButton(
           tooltip: context.t('back'),
           icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.pop(),
+          onPressed: () => context.go('/client/drivers'),
         ),
         title: Text(context.t('driver_profile')),
       ),
@@ -39,14 +42,19 @@ class DriverProfileScreen extends StatelessWidget {
                 CircleAvatar(
                   radius: 38,
                   backgroundColor: AppColors.driverRole.withOpacity(0.12),
-                  child: Text(
-                    driver.fullName.isNotEmpty
-                        ? driver.fullName[0].toUpperCase()
-                        : '?',
-                    style: AppTextStyles.title1.copyWith(
-                      color: AppColors.driverRole,
-                    ),
-                  ),
+                  backgroundImage: driver.profilePhotoBase64 == null
+                      ? null
+                      : MemoryImage(base64Decode(driver.profilePhotoBase64!)),
+                  child: driver.profilePhotoBase64 != null
+                      ? null
+                      : Text(
+                          driver.fullName.isNotEmpty
+                              ? driver.fullName[0].toUpperCase()
+                              : '?',
+                          style: AppTextStyles.title1.copyWith(
+                            color: AppColors.driverRole,
+                          ),
+                        ),
                 ),
                 const SizedBox(height: 14),
                 Text(driver.fullName, style: AppTextStyles.title2),
@@ -93,8 +101,111 @@ class DriverProfileScreen extends StatelessWidget {
             onPressed: () =>
                 context.push('/client/create-order', extra: driver),
           ),
+          const SizedBox(height: 24),
+          Text(context.t('reviews'), style: AppTextStyles.title3),
+          const SizedBox(height: 10),
+          _DriverReviews(driverId: driver.uid),
         ],
       ),
+    );
+  }
+}
+
+class _DriverReviews extends StatelessWidget {
+  final String driverId;
+
+  const _DriverReviews({required this.driverId});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('orders')
+          .where('driverId', isEqualTo: driverId)
+          .where('status', isEqualTo: 'delivered')
+          .orderBy('createdAt', descending: true)
+          .limit(30)
+          .snapshots(),
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+        }
+        final reviews = (snap.data?.docs ?? []).where((doc) {
+          final data = doc.data();
+          return data['clientRating'] != null &&
+              ((data['clientRatingComment'] as String?)?.trim().isNotEmpty ??
+                  false);
+        }).toList();
+
+        if (reviews.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface(context),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.border(context)),
+            ),
+            child: Text(
+              context.t('no_reviews'),
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.textSecondary(context),
+              ),
+            ),
+          );
+        }
+
+        return Column(
+          children: reviews.map((doc) {
+            final data = doc.data();
+            final rating = (data['clientRating'] as num?)?.toDouble() ?? 0;
+            final comment = data['clientRatingComment'] as String? ?? '';
+            final clientName =
+                data['clientName'] as String? ?? context.t('client');
+            return Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.surface(context),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.border(context)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.star_rounded,
+                          color: AppColors.warning, size: 18),
+                      const SizedBox(width: 4),
+                      Text(
+                        rating.toStringAsFixed(1),
+                        style: AppTextStyles.captionMedium.copyWith(
+                          color: AppColors.textPrimary(context),
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        clientName,
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textSecondary(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    comment,
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.textPrimary(context),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 }

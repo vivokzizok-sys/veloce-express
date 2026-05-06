@@ -93,6 +93,10 @@ class _VeloceExpressAppState extends State<VeloceExpressApp> {
 
   Future<void> _initNotifications() async {
     await _notificationSvc.initialize();
+    final current = _authBloc.state;
+    if (current is AuthAuthenticated) {
+      await _notificationSvc.watchUserNotifications(current.user.uid);
+    }
     _authSub = _authBloc.stream.listen((state) async {
       if (state is AuthAuthenticated) {
         await _notificationSvc.watchUserNotifications(state.user.uid);

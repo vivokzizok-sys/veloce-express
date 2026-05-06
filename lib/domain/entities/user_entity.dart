@@ -42,6 +42,7 @@ class UserEntity {
   final bool isEmailVerified;
   final bool isApproved;
   final VehicleType? vehicleType;
+  final String? profilePhotoBase64;
   final String? vehiclePhotoBase64;
   final String? vehiclePhotoContentType;
   final double rating;
@@ -57,6 +58,7 @@ class UserEntity {
     required this.isEmailVerified,
     required this.isApproved,
     this.vehicleType,
+    this.profilePhotoBase64,
     this.vehiclePhotoBase64,
     this.vehiclePhotoContentType,
     this.rating = 0,
@@ -81,6 +83,7 @@ class UserEntity {
       isEmailVerified: isEmailVerified ?? this.isEmailVerified,
       isApproved: isApproved ?? this.isApproved,
       vehicleType: vehicleType,
+      profilePhotoBase64: profilePhotoBase64,
       vehiclePhotoBase64: vehiclePhotoBase64,
       vehiclePhotoContentType: vehiclePhotoContentType,
       rating: rating,

@@ -86,6 +86,8 @@ class TrackingActive extends TrackingState {
 
 class TrackingDelivered extends TrackingState {}
 
+class TrackingDeliveryConfirmed extends TrackingState {}
+
 class TrackingRated extends TrackingState {}
 
 class TrackingError extends TrackingState {
@@ -150,7 +152,7 @@ class TrackingBloc extends Bloc<TrackingEvent, TrackingState> {
     final result = await _repo.completeDelivery(event.orderId);
     result.fold(
       (failure) => emit(TrackingError(failure.message)),
-      (_) => emit(TrackingDelivered()),
+      (_) => emit(TrackingDeliveryConfirmed()),
     );
   }
 
