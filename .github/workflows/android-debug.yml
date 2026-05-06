@@ -28,6 +28,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Prepare Android Gradle wrapper
+        run: chmod +x android/gradlew
+
       - name: Build debug APK
         run: flutter build apk --debug
 
