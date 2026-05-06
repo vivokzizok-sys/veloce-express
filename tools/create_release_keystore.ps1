@@ -11,9 +11,21 @@ if (Test-Path -LiteralPath $keyPath) {
 }
 
 $keytool = "keytool"
-$androidStudioKeytool = "C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe"
-if (Test-Path -LiteralPath $androidStudioKeytool) {
-    $keytool = $androidStudioKeytool
+$keytoolCandidates = @(
+    "C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe",
+    "C:\Program Files\Java\jdk-17\bin\keytool.exe",
+    "C:\Program Files\Java\jdk-21.0.10\bin\keytool.exe"
+)
+
+foreach ($candidate in $keytoolCandidates) {
+    if (Test-Path -LiteralPath $candidate) {
+        $keytool = $candidate
+        break
+    }
+}
+
+if ($keytool -eq "keytool" -and -not (Get-Command keytool -ErrorAction SilentlyContinue)) {
+    throw "keytool was not found. Install JDK 17 or add keytool.exe to PATH."
 }
 
 function Convert-ToPlainText([securestring]$value) {
