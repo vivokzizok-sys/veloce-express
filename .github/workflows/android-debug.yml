@@ -1,4 +1,4 @@
-name: Android Release APK
+name: Android Debug APK
 
 on:
   push:
@@ -24,24 +24,29 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: "3.41.9"
+          cache: true
 
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: Test
+        run: flutter test
+
       - name: Prepare Android Gradle wrapper
         run: chmod +x android/gradlew
 
-      - name: Build release APKs
-        run: flutter build apk --release --split-per-abi --tree-shake-icons
+      - name: Build debug APK
+        run: flutter build apk --debug
 
-      - name: Rename APKs
-        run: |
-          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/app/outputs/flutter-apk/veloce-express-arm64.apk
-          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk build/app/outputs/flutter-apk/veloce-express-armv7.apk
-          mv build/app/outputs/flutter-apk/app-x86_64-release.apk build/app/outputs/flutter-apk/veloce-express-x86_64.apk
+      - name: Rename APK
+        run: mv build/app/outputs/flutter-apk/app-debug.apk build/app/outputs/flutter-apk/veloce-express.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: veloce-express-release-apks
-          path: build/app/outputs/flutter-apk/veloce-express-*.apk
+          name: veloce-express-debug-apk
+          path: build/app/outputs/flutter-apk/veloce-express.apk
