@@ -76,8 +76,16 @@ class OrderDetailScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               children: [
                 _OrderSummary(order: order),
+                if (order.status == OrderStatus.priced ||
+                    order.status == OrderStatus.requested ||
+                    order.status == OrderStatus.rejected) ...[
+                  const SizedBox(height: 12),
+                  _DirectRequestPanel(order: order),
+                ],
                 if (order.status == OrderStatus.open ||
-                    order.status == OrderStatus.bidding) ...[
+                    order.status == OrderStatus.bidding ||
+                    order.status == OrderStatus.requested ||
+                    order.status == OrderStatus.priced) ...[
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     onPressed: () => _showCancelSheet(context, order),
@@ -88,13 +96,16 @@ class OrderDetailScreen extends StatelessWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: 18),
-                Text(context.t('bids'),
-                    style: AppTextStyles.title3.copyWith(
-                      color: AppColors.textPrimary(context),
-                    )),
-                const SizedBox(height: 10),
-                _BidsList(order: order),
+                if (order.status == OrderStatus.open ||
+                    order.status == OrderStatus.bidding) ...[
+                  const SizedBox(height: 18),
+                  Text(context.t('bids'),
+                      style: AppTextStyles.title3.copyWith(
+                        color: AppColors.textPrimary(context),
+                      )),
+                  const SizedBox(height: 10),
+                  _BidsList(order: order),
+                ],
               ],
             ),
           );
@@ -155,6 +166,92 @@ class OrderDetailScreen extends StatelessWidget {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(context.t('order_cancelled'))),
+    );
+  }
+}
+
+class _DirectRequestPanel extends StatelessWidget {
+  final OrderEntity order;
+
+  const _DirectRequestPanel({required this.order});
+
+  @override
+  Widget build(BuildContext context) {
+    final amount = order.acceptedBidAmount;
+    return BlocListener<OrderBloc, OrderState>(
+      listener: (context, state) async {
+        if (state is DirectPriceAcceptedSuccess &&
+            order.status == OrderStatus.priced) {
+          final driverId = order.driverId;
+          if (driverId == null) return;
+          final bloc = context.read<OrderBloc>();
+          final driver = await bloc.getUser(driverId);
+          if (!context.mounted || driver == null) return;
+          context.go('/active-trip', extra: {
+            'order': order.copyWith(status: OrderStatus.accepted),
+            'otherParty': driver,
+          });
+        }
+        if (state is DirectPriceRejectedSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.t('price_rejected'))),
+          );
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surface(context),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.border(context)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              order.status == OrderStatus.requested
+                  ? context.t('waiting_driver_price')
+                  : order.status == OrderStatus.rejected
+                      ? context.t('price_rejected')
+                      : context.t('driver_sent_price'),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textPrimary(context),
+              ),
+            ),
+            if (amount != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                '${amount.toStringAsFixed(0)} DA',
+                style: AppTextStyles.title2.copyWith(color: AppColors.accent),
+              ),
+            ],
+            if (order.status == OrderStatus.priced) ...[
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => context
+                          .read<OrderBloc>()
+                          .add(OrderDirectPriceRejected(order.orderId)),
+                      child: Text(context.t('reject')),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => context
+                          .read<OrderBloc>()
+                          .add(OrderDirectPriceAccepted(order.orderId)),
+                      child: Text(context.t('accept')),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

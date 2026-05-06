@@ -45,9 +45,9 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go('/client/create-order'),
-        icon: const Icon(Icons.add_rounded),
-        label: Text(context.t('new_order')),
+        onPressed: () => context.go('/client/drivers'),
+        icon: const Icon(Icons.local_shipping_outlined),
+        label: Text(context.t('choose_driver')),
       ),
       body: Column(
         children: [
@@ -220,6 +220,9 @@ class _OrderTile extends StatelessWidget {
   }
 
   Color _statusColor(OrderStatus status) => switch (status) {
+        OrderStatus.requested => AppColors.info,
+        OrderStatus.priced => AppColors.warning,
+        OrderStatus.rejected => AppColors.error,
         OrderStatus.open => AppColors.info,
         OrderStatus.bidding => AppColors.warning,
         OrderStatus.accepted => AppColors.accent,

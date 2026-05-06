@@ -7,6 +7,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/settings/app_settings.dart';
 import '../../../data/models/order_model.dart';
+import '../../../domain/entities/order_entity.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../order/bloc/order_bloc.dart';
 import '../../shared/widgets/shared_widgets.dart';
@@ -51,7 +52,7 @@ class _PlaceBidScreenState extends State<PlaceBidScreen> {
               icon: const Icon(Icons.arrow_back_rounded),
               onPressed: () => context.go('/driver/home'),
             ),
-            title: Text(context.t('place_bid')),
+            title: Text(context.t('delivery_request')),
           ),
           body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
             stream: FirebaseFirestore.instance
@@ -77,46 +78,75 @@ class _PlaceBidScreenState extends State<PlaceBidScreen> {
                                 _OrderRouteCard(order: order),
                                 const SizedBox(height: 18),
                               ],
-                              AppTextField(
-                                controller: _amount,
-                                hint: context.t('bid_amount'),
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                  decimal: true,
+                              if (order?.status == OrderStatus.requested) ...[
+                                AppTextField(
+                                  controller: _amount,
+                                  hint: context.t('delivery_price'),
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return context.t('field_required');
+                                    }
+                                    final amount = double.tryParse(value);
+                                    return amount != null && amount > 0
+                                        ? null
+                                        : context.t('valid_amount');
+                                  },
+                                  prefixIcon: const Center(
+                                    widthFactor: 1.4,
+                                    child: Text('DA'),
+                                  ),
                                 ),
-                                validator: (value) {
-                                  if (value == null || value.trim().isEmpty) {
-                                    return context.t('field_required');
-                                  }
-                                  final amount = double.tryParse(value);
-                                  return amount != null && amount > 0
-                                      ? null
-                                      : context.t('valid_amount');
-                                },
-                                prefixIcon: const Center(
-                                  widthFactor: 1.4,
-                                  child: Text('DA'),
+                                const SizedBox(height: 18),
+                                PrimaryButton(
+                                  label: context.t('send_price'),
+                                  isLoading: loading,
+                                  onPressed: () {
+                                    if (!_formKey.currentState!.validate()) {
+                                      return;
+                                    }
+                                    final driver = (context
+                                            .read<AuthBloc>()
+                                            .state as AuthAuthenticated)
+                                        .user;
+                                    context
+                                        .read<OrderBloc>()
+                                        .add(OrderBidPlaceRequested(
+                                          orderId: widget.orderId,
+                                          driver: driver,
+                                          amount: double.parse(_amount.text),
+                                        ));
+                                  },
                                 ),
-                              ),
-                              const SizedBox(height: 18),
-                              PrimaryButton(
-                                label: context.t('send_bid'),
-                                isLoading: loading,
-                                onPressed: () {
-                                  if (!_formKey.currentState!.validate())
-                                    return;
-                                  final driver = (context.read<AuthBloc>().state
-                                          as AuthAuthenticated)
-                                      .user;
-                                  context
-                                      .read<OrderBloc>()
-                                      .add(OrderBidPlaceRequested(
-                                        orderId: widget.orderId,
-                                        driver: driver,
-                                        amount: double.parse(_amount.text),
-                                      ));
-                                },
-                              ),
+                              ] else if (order?.status ==
+                                      OrderStatus.accepted ||
+                                  order?.status == OrderStatus.inProgress) ...[
+                                PrimaryButton(
+                                  label: context.t('active_trip'),
+                                  onPressed: () async {
+                                    final client = await context
+                                        .read<OrderBloc>()
+                                        .getUser(order!.clientId);
+                                    if (client == null || !context.mounted) {
+                                      return;
+                                    }
+                                    context.go('/active-trip', extra: {
+                                      'order': order,
+                                      'otherParty': client,
+                                    });
+                                  },
+                                ),
+                              ] else if (order?.acceptedBidAmount != null) ...[
+                                Text(
+                                  '${context.t('price_sent')}: ${order!.acceptedBidAmount!.toStringAsFixed(0)} DA',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: AppColors.warning,
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),

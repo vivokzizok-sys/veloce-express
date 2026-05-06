@@ -375,12 +375,15 @@ class _OrdersTabState extends State<_OrdersTab> {
   Widget build(BuildContext context) {
     final filters = {
       'all': context.t('all'),
+      'requested': context.statusText('requested'),
+      'priced': context.statusText('priced'),
       'open': context.statusText('open'),
       'bidding': context.statusText('bidding'),
       'accepted': context.statusText('accepted'),
       'inProgress': context.statusText('inProgress'),
       'delivered': context.statusText('delivered'),
       'cancelled': context.statusText('cancelled'),
+      'rejected': context.statusText('rejected'),
     };
     Query query = widget.db
         .collection('orders')
@@ -550,6 +553,9 @@ class _AdminOrderRow extends StatelessWidget {
   }
 
   Color _statusColor(String s) => switch (s) {
+        'requested' => AppColors.info,
+        'priced' => AppColors.warning,
+        'rejected' => AppColors.error,
         'open' => AppColors.info,
         'bidding' => AppColors.warning,
         'accepted' => AppColors.accent,

@@ -22,13 +22,26 @@ class OrderRepositoryImpl implements OrderRepository {
           ? _db.collection('orders').doc()
           : _db.collection('orders').doc(order.orderId);
       final model = OrderModel.fromEntity(order.copyWith(
-        status: OrderStatus.open,
+        status:
+            order.driverId == null ? OrderStatus.open : OrderStatus.requested,
       ));
       await ref.set({
         ...model.toFirestore(creating: true),
         'clientId': order.clientId,
         'bidCount': 0,
       });
+      if (order.driverId != null) {
+        await _db.collection('notifications').add({
+          'userId': order.driverId,
+          'orderId': ref.id,
+          'type': 'direct_request',
+          'title': 'New delivery request',
+          'body': '${order.clientName} sent you a delivery request.',
+          'createdBy': order.clientId,
+          'read': false,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
       final snap = await ref.get();
       return Right(OrderModel.fromFirestore(snap));
     } on FirebaseException catch (e) {
@@ -55,6 +68,24 @@ class OrderRepositoryImpl implements OrderRepository {
         .where('status', whereIn: ['open', 'bidding'])
         .orderBy('createdAt', descending: true)
         .limit(50)
+        .snapshots()
+        .map((snap) => snap.docs.map(OrderModel.fromFirestore).toList());
+  }
+
+  @override
+  Stream<List<OrderEntity>> watchDriverOrders(String driverId) {
+    return _db
+        .collection('orders')
+        .where('driverId', isEqualTo: driverId)
+        .where('status', whereIn: [
+          'requested',
+          'priced',
+          'accepted',
+          'inProgress',
+          'delivered',
+        ])
+        .orderBy('createdAt', descending: true)
+        .limit(100)
         .snapshots()
         .map((snap) => snap.docs.map(OrderModel.fromFirestore).toList());
   }
@@ -88,6 +119,26 @@ class OrderRepositoryImpl implements OrderRepository {
   }) async {
     try {
       final orderRef = _db.collection('orders').doc(orderId);
+      final orderSnap = await orderRef.get();
+      final orderData = orderSnap.data();
+      if (orderData != null &&
+          orderData['driverId'] == driver.uid &&
+          orderData['status'] == 'requested') {
+        await orderRef.update({
+          'status': 'priced',
+          'acceptedBidAmount': amount,
+          'pricedAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        await _notifyOrderClient(
+          orderId: orderId,
+          type: 'price_received',
+          title: 'Price received',
+          body: '${driver.fullName}: ${amount.toStringAsFixed(0)} DA',
+          createdBy: driver.uid,
+        );
+        return const Right(null);
+      }
       final bidRef = orderRef.collection('bids').doc(driver.uid);
       final batch = _db.batch();
       final bid = BidModel(
@@ -117,6 +168,67 @@ class OrderRepositoryImpl implements OrderRepository {
       return const Right(null);
     } on FirebaseException catch (e) {
       return Left(NetworkFailure(e.message ?? 'Failed to place bid'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> acceptDirectPrice(String orderId) async {
+    try {
+      final orderRef = _db.collection('orders').doc(orderId);
+      final snap = await orderRef.get();
+      final data = snap.data();
+      final driverId = data?['driverId'] as String?;
+      if (driverId == null) {
+        return const Left(ValidationFailure('Driver not found'));
+      }
+      await orderRef.update({
+        'status': 'accepted',
+        'acceptedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      await _db.collection('notifications').add({
+        'userId': driverId,
+        'orderId': orderId,
+        'type': 'price_accepted',
+        'title': 'Price accepted',
+        'body': 'The client accepted your delivery price.',
+        'createdBy': data?['clientId'],
+        'read': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      return const Right(null);
+    } on FirebaseException catch (e) {
+      return Left(NetworkFailure(e.message ?? 'Failed to accept price'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> rejectDirectPrice(String orderId) async {
+    try {
+      final orderRef = _db.collection('orders').doc(orderId);
+      final snap = await orderRef.get();
+      final data = snap.data();
+      final driverId = data?['driverId'] as String?;
+      await orderRef.update({
+        'status': 'rejected',
+        'rejectedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      if (driverId != null) {
+        await _db.collection('notifications').add({
+          'userId': driverId,
+          'orderId': orderId,
+          'type': 'price_rejected',
+          'title': 'Price rejected',
+          'body': 'The client rejected your delivery price.',
+          'createdBy': data?['clientId'],
+          'read': false,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+      return const Right(null);
+    } on FirebaseException catch (e) {
+      return Left(NetworkFailure(e.message ?? 'Failed to reject price'));
     }
   }
 

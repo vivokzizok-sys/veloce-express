@@ -18,6 +18,8 @@ import '../../presentation/client/screens/client_home_screen.dart';
 import '../../presentation/client/screens/create_order_screen.dart';
 import '../../presentation/client/screens/client_dashboard_screen.dart';
 import '../../presentation/client/screens/order_detail_screen.dart';
+import '../../presentation/client/screens/driver_profile_screen.dart';
+import '../../presentation/client/screens/drivers_screen.dart';
 import '../../presentation/driver/screens/driver_dashboard_screen.dart';
 import '../../presentation/driver/screens/driver_home_screen.dart';
 import '../../presentation/driver/screens/place_bid_screen.dart';
@@ -35,6 +37,8 @@ class AppRoutes {
 
   static const clientHome = '/client/home';
   static const clientDashboard = '/client/dashboard';
+  static const drivers = '/client/drivers';
+  static const driverProfile = '/client/driver-profile';
   static const createOrder = '/client/create-order';
   static const orderDetail = '/client/order/:orderId';
 
@@ -141,8 +145,32 @@ class AppRouter {
               _slide(state, const ClientDashboardScreen()),
         ),
         GoRoute(
+          path: AppRoutes.drivers,
+          pageBuilder: (_, state) => _slide(state, const DriversScreen()),
+        ),
+        GoRoute(
+          path: AppRoutes.driverProfile,
+          pageBuilder: (_, state) {
+            final driver = state.extra as UserEntity?;
+            if (driver == null) {
+              return _fade(
+                state,
+                Builder(
+                  builder: (context) => Scaffold(
+                    body: Center(child: Text(context.t('driver_not_found'))),
+                  ),
+                ),
+              );
+            }
+            return _slide(state, DriverProfileScreen(driver: driver));
+          },
+        ),
+        GoRoute(
           path: AppRoutes.createOrder,
-          pageBuilder: (_, state) => _slide(state, const CreateOrderScreen()),
+          pageBuilder: (_, state) => _slide(
+            state,
+            CreateOrderScreen(driver: state.extra as UserEntity?),
+          ),
         ),
         GoRoute(
           path: AppRoutes.orderDetail,

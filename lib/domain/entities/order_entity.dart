@@ -1,7 +1,20 @@
-enum OrderStatus { open, bidding, accepted, inProgress, delivered, cancelled }
+enum OrderStatus {
+  requested,
+  priced,
+  rejected,
+  open,
+  bidding,
+  accepted,
+  inProgress,
+  delivered,
+  cancelled,
+}
 
 extension OrderStatusX on OrderStatus {
   String get value => switch (this) {
+        OrderStatus.requested => 'requested',
+        OrderStatus.priced => 'priced',
+        OrderStatus.rejected => 'rejected',
         OrderStatus.open => 'open',
         OrderStatus.bidding => 'bidding',
         OrderStatus.accepted => 'accepted',
@@ -11,6 +24,9 @@ extension OrderStatusX on OrderStatus {
       };
 
   static OrderStatus fromString(String value) => switch (value) {
+        'requested' => OrderStatus.requested,
+        'priced' => OrderStatus.priced,
+        'rejected' => OrderStatus.rejected,
         'bidding' => OrderStatus.bidding,
         'accepted' => OrderStatus.accepted,
         'inProgress' => OrderStatus.inProgress,

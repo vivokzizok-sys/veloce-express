@@ -9,6 +9,7 @@ abstract class OrderRepository {
   Future<Either<Failure, OrderEntity>> createOrder(OrderEntity order);
   Stream<List<OrderEntity>> watchClientOrders(String clientId);
   Stream<List<OrderEntity>> watchOpenOrders();
+  Stream<List<OrderEntity>> watchDriverOrders(String driverId);
   Stream<OrderEntity?> watchOrder(String orderId);
   Stream<List<BidEntity>> watchBids(String orderId);
   Future<Either<Failure, void>> placeBid({
@@ -24,5 +25,7 @@ abstract class OrderRepository {
     required String orderId,
     required String bidId,
   });
+  Future<Either<Failure, void>> acceptDirectPrice(String orderId);
+  Future<Either<Failure, void>> rejectDirectPrice(String orderId);
   Future<UserEntity?> getUser(String uid);
 }

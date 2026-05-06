@@ -24,7 +24,8 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   @override
   void initState() {
     super.initState();
-    context.read<OrderBloc>().add(OrderWatchOpenOrders());
+    final user = (context.read<AuthBloc>().state as AuthAuthenticated).user;
+    context.read<OrderBloc>().add(OrderWatchDriverOrders(user.uid));
   }
 
   @override
@@ -33,7 +34,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     return Scaffold(
       backgroundColor: AppColors.page(context),
       appBar: AppBar(
-        title: Text(context.t('jobs_near_you')),
+        title: Text(context.t('my_delivery_requests')),
         actions: [
           Center(
             child: Padding(
@@ -62,8 +63,8 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                   if (state.orders.isEmpty) {
                     return EmptyState(
                       icon: Icons.work_outline_rounded,
-                      title: context.t('no_jobs_available'),
-                      subtitle: context.t('open_requests_appear'),
+                      title: context.t('no_driver_requests'),
+                      subtitle: context.t('no_driver_requests_body'),
                     );
                   }
                   return ListView.separated(
@@ -177,7 +178,10 @@ class _JobTile extends StatelessWidget {
                 Expanded(
                     child:
                         Text(order.description, style: AppTextStyles.title3)),
-                const Icon(Icons.chevron_right_rounded),
+                StatusChip(
+                  label: context.statusText(order.status.value),
+                  color: _statusColor(order.status),
+                ),
               ],
             ),
             const SizedBox(height: 10),
@@ -191,4 +195,16 @@ class _JobTile extends StatelessWidget {
       ),
     );
   }
+
+  Color _statusColor(OrderStatus status) => switch (status) {
+        OrderStatus.requested => AppColors.info,
+        OrderStatus.priced => AppColors.warning,
+        OrderStatus.accepted => AppColors.accent,
+        OrderStatus.inProgress => AppColors.success,
+        OrderStatus.delivered => AppColors.grey400,
+        OrderStatus.rejected => AppColors.error,
+        OrderStatus.cancelled => AppColors.error,
+        OrderStatus.open => AppColors.info,
+        OrderStatus.bidding => AppColors.warning,
+      };
 }

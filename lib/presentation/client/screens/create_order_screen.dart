@@ -7,12 +7,15 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../core/settings/app_settings.dart';
 import '../../../core/utils/validators.dart';
 import '../../../domain/entities/order_entity.dart';
+import '../../../domain/entities/user_entity.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../order/bloc/order_bloc.dart';
 import '../../shared/widgets/shared_widgets.dart';
 
 class CreateOrderScreen extends StatefulWidget {
-  const CreateOrderScreen({super.key});
+  final UserEntity? driver;
+
+  const CreateOrderScreen({super.key, this.driver});
 
   @override
   State<CreateOrderScreen> createState() => _CreateOrderScreenState();
@@ -64,6 +67,22 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(18),
                 children: [
+                  if (widget.driver == null) ...[
+                    EmptyState(
+                      icon: Icons.local_shipping_outlined,
+                      title: context.t('choose_driver_first'),
+                      subtitle: context.t('choose_driver_first_body'),
+                    ),
+                    const SizedBox(height: 18),
+                    PrimaryButton(
+                      label: context.t('choose_driver'),
+                      onPressed: () => context.go('/client/drivers'),
+                    ),
+                    const SizedBox(height: 18),
+                  ] else ...[
+                    _SelectedDriverCard(driver: widget.driver!),
+                    const SizedBox(height: 18),
+                  ],
                   Text(context.t('pickup'), style: AppTextStyles.captionMedium),
                   const SizedBox(height: 8),
                   AppTextField(
@@ -119,6 +138,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                     label: context.t('publish_request'),
                     isLoading: loading,
                     onPressed: () {
+                      if (widget.driver == null) {
+                        context.go('/client/drivers');
+                        return;
+                      }
                       if (!_formKey.currentState!.validate()) return;
                       final user =
                           (context.read<AuthBloc>().state as AuthAuthenticated)
@@ -141,6 +164,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                               ),
                               dropoffAddress: _dropoffAddress.text.trim(),
                               status: OrderStatus.open,
+                              driverId: widget.driver!.uid,
                             ),
                           ));
                     },
@@ -151,6 +175,46 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _SelectedDriverCard extends StatelessWidget {
+  final UserEntity driver;
+
+  const _SelectedDriverCard({required this.driver});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface(context),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border(context)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.local_shipping_outlined,
+              color: AppColors.driverRole),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(driver.fullName, style: AppTextStyles.bodyMedium),
+                const SizedBox(height: 3),
+                Text(
+                  '${context.t('phone')}: ${driver.phoneNumber}',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textSecondary(context),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -157,7 +157,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen>
                               : widget.otherParty.phoneNumber,
                         ),
                         onComplete:
-                            _isDriver ? () => _confirmTrip(context) : null,
+                            !_isDriver ? () => _confirmTrip(context) : null,
                       ),
                     ],
                   ),
@@ -182,6 +182,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen>
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => _ConfirmTripSheet(
+        isDriver: _isDriver,
         onConfirm: () {
           Navigator.pop(context);
           context
@@ -508,10 +509,12 @@ class _BottomPanel extends StatelessWidget {
               icon: const Icon(Icons.report_problem_outlined, size: 18),
               label: Text(context.t('report_problem')),
             ),
-            if (isDriver && onComplete != null) ...[
+            if (onComplete != null) ...[
               const SizedBox(height: 18),
               PrimaryButton(
-                label: context.t('confirm_trip'),
+                label: isDriver
+                    ? context.t('confirm_trip')
+                    : context.t('confirm_delivery_received'),
                 onPressed: isLoading ? null : onComplete,
                 isLoading: isLoading,
                 backgroundColor: AppColors.success,
@@ -564,9 +567,10 @@ class _RouteRow extends StatelessWidget {
 }
 
 class _ConfirmTripSheet extends StatelessWidget {
+  final bool isDriver;
   final VoidCallback onConfirm;
 
-  const _ConfirmTripSheet({required this.onConfirm});
+  const _ConfirmTripSheet({required this.isDriver, required this.onConfirm});
 
   @override
   Widget build(BuildContext context) {
@@ -583,10 +587,17 @@ class _ConfirmTripSheet extends StatelessWidget {
           const Icon(Icons.inventory_2_outlined,
               color: AppColors.success, size: 42),
           const SizedBox(height: 16),
-          Text(context.t('confirm_trip_question'), style: AppTextStyles.title2),
+          Text(
+            isDriver
+                ? context.t('confirm_trip_question')
+                : context.t('confirm_delivery_received'),
+            style: AppTextStyles.title2,
+          ),
           const SizedBox(height: 8),
           Text(
-            context.t('confirm_trip_body'),
+            isDriver
+                ? context.t('confirm_trip_body')
+                : context.t('confirm_delivery_body'),
             style: AppTextStyles.body.copyWith(
               color: AppColors.textSecondary(context),
             ),
