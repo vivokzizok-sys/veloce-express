@@ -987,6 +987,7 @@ class _TicketCard extends StatelessWidget {
     final type = data['type'] as String? ?? 'support';
     final status = data['status'] as String? ?? 'open';
     final name = data['createdByName'] as String? ?? context.t('unknown');
+    final email = data['createdByEmail'] as String?;
     final createdBy = data['createdBy'] as String?;
     final message = data['message'] as String? ?? '';
     final orderId = data['orderId'] as String?;
@@ -1014,7 +1015,21 @@ class _TicketCard extends StatelessWidget {
                 color: isOpen ? AppColors.warning : AppColors.success,
               ),
               const SizedBox(width: 10),
-              Expanded(child: Text(name, style: AppTextStyles.bodyMedium)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name, style: AppTextStyles.bodyMedium),
+                    if (email != null && email.isNotEmpty)
+                      Text(
+                        email,
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textSecondary(context),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
               StatusChip(
                 label:
                     isOpen ? context.statusText('open') : context.t('closed'),

@@ -102,18 +102,6 @@ class SettingsScreen extends StatelessWidget {
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () => context.push('/support'),
               ),
-              ListTile(
-                leading: const Icon(Icons.privacy_tip_outlined),
-                title: Text(context.t('privacy_policy')),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => context.push('/legal/privacy'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.description_outlined),
-                title: Text(context.t('terms')),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => context.push('/legal/terms'),
-              ),
             ],
           ),
           const SizedBox(height: 18),

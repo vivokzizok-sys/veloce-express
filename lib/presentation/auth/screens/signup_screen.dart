@@ -148,26 +148,27 @@ class _SignupScreenState extends State<SignupScreen> {
                       Text(context.t('vehicle'),
                           style: AppTextStyles.captionMedium),
                       const SizedBox(height: 8),
-                      DropdownButtonFormField<VehicleType>(
-                        value: _vehicleType,
-                        items: [
-                          DropdownMenuItem(
-                            value: VehicleType.bike,
-                            child: Text(context.t('motorcycle')),
-                          ),
-                          DropdownMenuItem(
-                            value: VehicleType.car,
-                            child: Text(context.t('car')),
-                          ),
-                          DropdownMenuItem(
-                            value: VehicleType.truck,
-                            child: Text(context.t('truck')),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          if (value != null)
-                            setState(() => _vehicleType = value);
-                        },
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceAlt(context),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.border(context)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.two_wheeler_rounded,
+                                color: AppColors.driverRole),
+                            const SizedBox(width: 10),
+                            Text(
+                              context.t('motorcycle'),
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.textPrimary(context),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 12),
                       InkWell(

@@ -144,6 +144,19 @@ class TrackingRepositoryImpl implements TrackingRepository {
           'ratedAt': FieldValue.serverTimestamp(),
         });
       });
+      final messages = await _db
+          .collection('orders')
+          .doc(orderId)
+          .collection('messages')
+          .limit(200)
+          .get();
+      if (messages.docs.isNotEmpty) {
+        final batch = _db.batch();
+        for (final doc in messages.docs) {
+          batch.delete(doc.reference);
+        }
+        await batch.commit();
+      }
       return const Right(null);
     } on FirebaseException catch (e) {
       return Left(NetworkFailure(e.message ?? 'Failed to submit rating'));

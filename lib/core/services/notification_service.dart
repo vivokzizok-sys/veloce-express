@@ -11,14 +11,63 @@ class NotificationService {
   })  : _firestore = firestore ?? FirebaseFirestore.instance,
         _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
-  static const _channel = AndroidNotificationChannel(
-    'veloce_express_alerts_v2',
-    'Veloce Express',
-    description: 'Trip, bid, and account notifications.',
+  static const _defaultChannel = AndroidNotificationChannel(
+    'veloce_express_alerts_custom_v1',
+    'Veloce Express alerts',
+    description: 'General Veloce Express notifications.',
     importance: Importance.max,
     playSound: true,
     enableVibration: true,
+    sound: RawResourceAndroidNotificationSound('message_sound'),
   );
+
+  static const _channels = <String, AndroidNotificationChannel>{
+    'direct_request': AndroidNotificationChannel(
+      'veloce_express_direct_request_v1',
+      'Delivery requests',
+      description: 'New delivery requests.',
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+      sound: RawResourceAndroidNotificationSound('whatsapp_notification'),
+    ),
+    'chat_message': AndroidNotificationChannel(
+      'veloce_express_chat_v1',
+      'Trip chat',
+      description: 'Messages between client and driver.',
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+      sound: RawResourceAndroidNotificationSound('iphone_sms'),
+    ),
+    'delivered': AndroidNotificationChannel(
+      'veloce_express_delivered_v1',
+      'Delivery completed',
+      description: 'Delivery completion notifications.',
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+      sound: RawResourceAndroidNotificationSound('delivered_message'),
+    ),
+    'trip_started': AndroidNotificationChannel(
+      'veloce_express_trip_started_v1',
+      'Trip started',
+      description: 'Active trip notifications.',
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+      sound: RawResourceAndroidNotificationSound('sms_android'),
+    ),
+    'support_reply': AndroidNotificationChannel(
+      'veloce_express_support_v1',
+      'Support replies',
+      description: 'Replies from support.',
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+      sound: RawResourceAndroidNotificationSound('notice11'),
+    ),
+  };
 
   final FirebaseFirestore _firestore;
   final FlutterLocalNotificationsPlugin _plugin;
@@ -33,23 +82,29 @@ class NotificationService {
     await _plugin.initialize(initSettings);
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
-    await android?.createNotificationChannel(_channel);
+    await android?.createNotificationChannel(_defaultChannel);
+    for (final channel in _channels.values) {
+      await android?.createNotificationChannel(channel);
+    }
     await android?.requestNotificationsPermission();
   }
 
   Future<void> show({
     required String title,
     required String body,
+    String? type,
     String? payload,
   }) async {
+    final channel = _channels[type] ?? _defaultChannel;
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
-        _channel.id,
-        _channel.name,
-        channelDescription: _channel.description,
+        channel.id,
+        channel.name,
+        channelDescription: channel.description,
         importance: Importance.max,
         priority: Priority.max,
         playSound: true,
+        sound: channel.sound,
         enableVibration: true,
         category: AndroidNotificationCategory.message,
         icon: '@mipmap/ic_launcher',
@@ -90,6 +145,7 @@ class NotificationService {
         await show(
           title: title,
           body: body,
+          type: data['type'] as String?,
           payload: data['orderId'] as String?,
         );
 

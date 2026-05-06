@@ -82,13 +82,6 @@ class DriverProfileScreen extends StatelessWidget {
                         value: driver.rating.toStringAsFixed(1),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _ProfileStat(
-                        label: context.t('trips_label'),
-                        value: '${driver.totalDeliveries}',
-                      ),
-                    ),
                   ],
                 ),
               ],

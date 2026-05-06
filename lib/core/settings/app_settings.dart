@@ -286,6 +286,8 @@ class AppStrings {
     'reply': 'Reply',
     'admin_reply': 'Admin reply',
     'my_tickets': 'My tickets',
+    'write_message': 'Write a message',
+    'no_messages_yet': 'No messages yet.',
     'reviews': 'Reviews',
     'no_reviews': 'No reviews yet.',
     'comments': 'Comments',
@@ -510,6 +512,9 @@ class AppStrings {
     'reply': '\u0631\u062f',
     'admin_reply': '\u0631\u062f \u0627\u0644\u0623\u062f\u0645\u0646',
     'my_tickets': '\u062a\u0630\u0627\u0643\u0631\u064a',
+    'write_message': '\u0627\u0643\u062a\u0628 \u0631\u0633\u0627\u0644\u0629',
+    'no_messages_yet':
+        '\u0644\u0627 \u062a\u0648\u062c\u062f \u0631\u0633\u0627\u0626\u0644 \u0628\u0639\u062f.',
     'reviews': '\u0627\u0644\u062a\u0639\u0644\u064a\u0642\u0627\u062a',
     'no_reviews':
         '\u0644\u0627 \u062a\u0648\u062c\u062f \u062a\u0639\u0644\u064a\u0642\u0627\u062a \u0628\u0639\u062f.',

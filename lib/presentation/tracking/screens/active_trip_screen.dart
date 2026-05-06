@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart' as lottie;
 import 'package:url_launcher/url_launcher.dart';
@@ -156,6 +157,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen>
                               ? widget.order.clientPhone
                               : widget.otherParty.phoneNumber,
                         ),
+                        onChat: () => _showChatSheet(context),
                         onComplete:
                             _isDriver ? () => _confirmTrip(context) : null,
                       ),
@@ -174,6 +176,24 @@ class _ActiveTripScreenState extends State<ActiveTripScreen>
           ),
         );
       },
+    );
+  }
+
+  void _showChatSheet(BuildContext context) {
+    final me = (context.read<AuthBloc>().state as AuthAuthenticated).user;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: AppColors.surface(context),
+      builder: (_) => AppSettingsScope(
+        controller: context.settings,
+        child: _TripChatSheet(
+          order: widget.order,
+          me: me,
+          otherParty: widget.otherParty,
+        ),
+      ),
     );
   }
 
@@ -210,8 +230,28 @@ class _ActiveTripScreenState extends State<ActiveTripScreen>
                 comment: comment,
               ));
         },
+        onSkip: () async {
+          Navigator.pop(context);
+          await _deleteTripChat();
+          if (context.mounted) context.go('/client/home');
+        },
       ),
     );
+  }
+
+  Future<void> _deleteTripChat() async {
+    final messages = await FirebaseFirestore.instance
+        .collection('orders')
+        .doc(widget.order.orderId)
+        .collection('messages')
+        .limit(200)
+        .get();
+    if (messages.docs.isEmpty) return;
+    final batch = FirebaseFirestore.instance.batch();
+    for (final doc in messages.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
   }
 }
 
@@ -372,6 +412,7 @@ class _BottomPanel extends StatelessWidget {
   final bool isDriver;
   final bool isLoading;
   final VoidCallback onCall;
+  final VoidCallback onChat;
   final VoidCallback? onComplete;
 
   const _BottomPanel({
@@ -380,6 +421,7 @@ class _BottomPanel extends StatelessWidget {
     required this.isDriver,
     required this.isLoading,
     required this.onCall,
+    required this.onChat,
     this.onComplete,
   });
 
@@ -440,6 +482,14 @@ class _BottomPanel extends StatelessWidget {
                     onCall();
                   },
                   icon: const Icon(Icons.phone_rounded),
+                ),
+                const SizedBox(width: 8),
+                IconButton.filledTonal(
+                  onPressed: () {
+                    HapticFeedback.selectionClick();
+                    onChat();
+                  },
+                  icon: const Icon(Icons.chat_bubble_outline_rounded),
                 ),
               ],
             ),
@@ -530,6 +580,191 @@ class _RouteRow extends StatelessWidget {
   }
 }
 
+class _TripChatSheet extends StatefulWidget {
+  final OrderEntity order;
+  final UserEntity me;
+  final UserEntity otherParty;
+
+  const _TripChatSheet({
+    required this.order,
+    required this.me,
+    required this.otherParty,
+  });
+
+  @override
+  State<_TripChatSheet> createState() => _TripChatSheetState();
+}
+
+class _TripChatSheetState extends State<_TripChatSheet> {
+  final _messageCtrl = TextEditingController();
+  final _db = FirebaseFirestore.instance;
+  bool _sending = false;
+
+  @override
+  void dispose() {
+    _messageCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _send() async {
+    final text = _messageCtrl.text.trim();
+    if (text.isEmpty || _sending) return;
+    setState(() => _sending = true);
+    try {
+      await _db
+          .collection('orders')
+          .doc(widget.order.orderId)
+          .collection('messages')
+          .add({
+        'senderId': widget.me.uid,
+        'senderName': widget.me.fullName,
+        'text': text,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      await _db.collection('notifications').add({
+        'userId': widget.otherParty.uid,
+        'orderId': widget.order.orderId,
+        'type': 'chat_message',
+        'title': widget.me.fullName,
+        'body': text,
+        'createdBy': widget.me.uid,
+        'read': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      _messageCtrl.clear();
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.viewInsetsOf(context).bottom;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(bottom: bottom),
+        child: SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.72,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+                child: Row(
+                  children: [
+                    const Icon(Icons.chat_bubble_outline_rounded,
+                        color: AppColors.accent),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        widget.otherParty.fullName,
+                        style: AppTextStyles.title3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: _db
+                      .collection('orders')
+                      .doc(widget.order.orderId)
+                      .collection('messages')
+                      .orderBy('createdAt')
+                      .limit(100)
+                      .snapshots(),
+                  builder: (context, snap) {
+                    if (snap.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    final docs = snap.data?.docs ?? [];
+                    if (docs.isEmpty) {
+                      return Center(
+                        child: Text(
+                          context.t('no_messages_yet'),
+                          style: AppTextStyles.body.copyWith(
+                            color: AppColors.textSecondary(context),
+                          ),
+                        ),
+                      );
+                    }
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      itemCount: docs.length,
+                      itemBuilder: (context, index) {
+                        final data = docs[index].data();
+                        final mine = data['senderId'] == widget.me.uid;
+                        return Align(
+                          alignment: mine
+                              ? AlignmentDirectional.centerEnd
+                              : AlignmentDirectional.centerStart,
+                          child: Container(
+                            constraints: BoxConstraints(
+                              maxWidth: MediaQuery.sizeOf(context).width * 0.72,
+                            ),
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 9,
+                            ),
+                            decoration: BoxDecoration(
+                              color: mine
+                                  ? AppColors.accent
+                                  : AppColors.surfaceAlt(context),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Text(
+                              data['text'] as String? ?? '',
+                              style: AppTextStyles.body.copyWith(
+                                color: mine
+                                    ? AppColors.white
+                                    : AppColors.textPrimary(context),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _messageCtrl,
+                        minLines: 1,
+                        maxLines: 4,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => _send(),
+                        decoration: InputDecoration(
+                          hintText: context.t('write_message'),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    IconButton.filled(
+                      onPressed: _sending ? null : _send,
+                      icon: _sending
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.send_rounded),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ConfirmTripSheet extends StatelessWidget {
   final bool isDriver;
   final VoidCallback onConfirm;
@@ -589,8 +824,13 @@ class _ConfirmTripSheet extends StatelessWidget {
 class _RatingSheet extends StatefulWidget {
   final String driverName;
   final void Function(double rating, String? comment) onSubmit;
+  final Future<void> Function() onSkip;
 
-  const _RatingSheet({required this.driverName, required this.onSubmit});
+  const _RatingSheet({
+    required this.driverName,
+    required this.onSubmit,
+    required this.onSkip,
+  });
 
   @override
   State<_RatingSheet> createState() => _RatingSheetState();
@@ -689,10 +929,7 @@ class _RatingSheetState extends State<_RatingSheet>
                 : null,
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.go('/client/home');
-            },
+            onPressed: widget.onSkip,
             child: Text(context.t('skip')),
           ),
         ],

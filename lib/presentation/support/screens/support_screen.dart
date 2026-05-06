@@ -46,6 +46,7 @@ class _SupportScreenState extends State<SupportScreen> {
         'status': 'open',
         'createdBy': user.uid,
         'createdByName': user.fullName,
+        'createdByEmail': user.email,
         'createdByRole': user.role.name,
         'orderId': widget.orderId,
         'reportedUserId': widget.reportedUserId,

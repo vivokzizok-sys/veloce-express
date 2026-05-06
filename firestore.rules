@@ -34,6 +34,15 @@ service cloud.firestore {
       return isApproved() && myUser().data.role == 'client';
     }
 
+    function orderParticipant(orderId) {
+      let order = get(/databases/$(database)/documents/orders/$(orderId));
+      return isApproved()
+        && (
+          order.data.clientId == request.auth.uid
+          || order.data.driverId == request.auth.uid
+        );
+    }
+
     match /users/{uid} {
       allow create: if signedIn()
         && request.auth.uid == uid
@@ -225,6 +234,24 @@ service cloud.firestore {
             .hasOnly(['status', 'updatedAt']);
 
         allow update, delete: if isAdmin();
+      }
+
+      match /messages/{messageId} {
+        allow read: if isAdmin() || orderParticipant(orderId);
+        allow create: if orderParticipant(orderId)
+          && get(/databases/$(database)/documents/orders/$(orderId)).data.status in ['accepted', 'inProgress']
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 800
+          && request.resource.data.keys().hasOnly([
+            'senderId',
+            'senderName',
+            'text',
+            'createdAt'
+          ]);
+        allow delete: if isAdmin() || orderParticipant(orderId);
+        allow update: if false;
       }
     }
 
