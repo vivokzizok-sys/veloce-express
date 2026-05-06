@@ -11,7 +11,8 @@ class DefaultFirebaseOptions {
       case TargetPlatform.android:
         return android;
       default:
-        throw UnsupportedError('Veloce Express is configured for Android only.');
+        throw UnsupportedError(
+            'Veloce Express is configured for Android only.');
     }
   }
 

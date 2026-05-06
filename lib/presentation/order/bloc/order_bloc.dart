@@ -88,7 +88,8 @@ class OrdersLoaded extends OrderState {
   final List<OrderEntity> orders;
   const OrdersLoaded(this.orders);
   @override
-  List<Object?> get props => [orders.length, orders.map((e) => e.orderId).join()];
+  List<Object?> get props =>
+      [orders.length, orders.map((e) => e.orderId).join()];
 }
 
 class SingleOrderLoaded extends OrderState {
@@ -214,7 +215,8 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     Emitter<OrderState> emit,
   ) async {
     emit(OrderProcessing());
-    final result = await _repo.acceptBid(orderId: event.orderId, bid: event.bid);
+    final result =
+        await _repo.acceptBid(orderId: event.orderId, bid: event.bid);
     result.fold(
       (failure) => emit(OrderError(failure.message)),
       (_) => emit(BidActionSuccess()),

@@ -161,7 +161,8 @@ class TrackingBloc extends Bloc<TrackingEvent, TrackingState> {
     emit(TrackingLoading());
     await _driverSub?.cancel();
     _driverSub = _repo.streamDriverLocation(event.driverId).listen((loc) {
-      if (loc != null) add(_TrackingLocationUpdated(loc.latitude, loc.longitude));
+      if (loc != null)
+        add(_TrackingLocationUpdated(loc.latitude, loc.longitude));
     });
     emit(const TrackingActive(isDriver: false));
   }

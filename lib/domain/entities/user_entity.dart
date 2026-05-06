@@ -1,6 +1,7 @@
 import 'order_entity.dart';
 
 enum UserRole { client, driver, admin }
+
 enum VehicleType { bike, car, truck }
 
 extension UserRoleX on UserRole {

@@ -66,6 +66,14 @@ service cloud.firestore {
         && request.resource.data.clientId == resource.data.clientId;
 
       allow update: if isDriver()
+        && resource.data.status in ['open', 'bidding']
+        && request.resource.data.status == 'bidding'
+        && request.resource.data.clientId == resource.data.clientId
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly(['status', 'bidCount', 'updatedAt']);
+
+      allow update: if isDriver()
         && resource.data.driverId == request.auth.uid
         && request.resource.data.driverId == resource.data.driverId;
 

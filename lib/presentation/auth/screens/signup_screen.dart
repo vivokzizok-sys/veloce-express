@@ -61,7 +61,12 @@ class _SignupScreenState extends State<SignupScreen> {
       builder: (context, state) {
         final loading = state is AuthLoading;
         return Scaffold(
-          appBar: AppBar(leading: const BackButton()),
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded),
+              onPressed: () => context.go('/login'),
+            ),
+          ),
           body: SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
@@ -137,7 +142,8 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                         ],
                         onChanged: (value) {
-                          if (value != null) setState(() => _vehicleType = value);
+                          if (value != null)
+                            setState(() => _vehicleType = value);
                         },
                       ),
                       const SizedBox(height: 12),
@@ -183,10 +189,12 @@ class _SignupScreenState extends State<SignupScreen> {
                               fullName: _name.text,
                               phoneNumber: _phone.text,
                               role: _role,
-                              vehicleType:
-                                  _role == UserRole.driver ? _vehicleType : null,
-                              vehiclePhoto:
-                                  _role == UserRole.driver ? _vehiclePhoto : null,
+                              vehicleType: _role == UserRole.driver
+                                  ? _vehicleType
+                                  : null,
+                              vehiclePhoto: _role == UserRole.driver
+                                  ? _vehiclePhoto
+                                  : null,
                             ));
                       },
                     ),

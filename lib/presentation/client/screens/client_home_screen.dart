@@ -4,9 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/settings/app_settings.dart';
 import '../../../domain/entities/order_entity.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../order/bloc/order_bloc.dart';
+import '../../shared/widgets/app_menu_button.dart';
 import '../../shared/widgets/shared_widgets.dart';
 
 class ClientHomeScreen extends StatefulWidget {
@@ -29,20 +31,15 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     final user = (context.read<AuthBloc>().state as AuthAuthenticated).user;
     return Scaffold(
       appBar: AppBar(
-        title: Text('Hi, ${user.fullName.split(' ').first}'),
+        title: Text(context.t('my_orders')),
         actions: [
-          IconButton(
-            tooltip: 'Sign out',
-            icon: const Icon(Icons.logout_rounded),
-            onPressed: () =>
-                context.read<AuthBloc>().add(AuthSignOutRequested()),
-          ),
+          AppMenuButton(user: user),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.go('/client/create-order'),
         icon: const Icon(Icons.add_rounded),
-        label: const Text('New Order'),
+        label: Text(context.t('new_order')),
       ),
       body: BlocBuilder<OrderBloc, OrderState>(
         builder: (context, state) {

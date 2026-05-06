@@ -77,7 +77,8 @@ class AppRouter {
           if (authScreens.contains(loc)) {
             return _homeForRole(authState.user.role);
           }
-          if (loc.startsWith('/admin') && authState.user.role != UserRole.admin) {
+          if (loc.startsWith('/admin') &&
+              authState.user.role != UserRole.admin) {
             return _homeForRole(authState.user.role);
           }
           if (loc.startsWith('/driver') &&
@@ -93,7 +94,8 @@ class AppRouter {
         return null;
       },
       routes: [
-        GoRoute(path: AppRoutes.splash, builder: (_, __) => const SplashScreen()),
+        GoRoute(
+            path: AppRoutes.splash, builder: (_, __) => const SplashScreen()),
         GoRoute(
           path: AppRoutes.login,
           pageBuilder: (_, state) => _fade(state, const LoginScreen()),

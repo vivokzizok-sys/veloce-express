@@ -146,7 +146,8 @@ class AuthRepositoryImpl implements AuthRepository {
       await user.sendEmailVerification();
       return const Right(null);
     } on FirebaseAuthException catch (e) {
-      return Left(AuthFailure(e.message ?? 'Could not send verification email'));
+      return Left(
+          AuthFailure(e.message ?? 'Could not send verification email'));
     }
   }
 

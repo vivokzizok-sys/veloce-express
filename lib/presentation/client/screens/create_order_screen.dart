@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/settings/app_settings.dart';
 import '../../../core/services/location_service.dart';
 import '../../../core/utils/validators.dart';
 import '../../../domain/entities/order_entity.dart';
@@ -59,7 +60,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   Widget build(BuildContext context) {
     return BlocConsumer<OrderBloc, OrderState>(
       listener: (context, state) {
-        if (state is OrderCreated) context.go('/client/order/${state.order.orderId}');
+        if (state is OrderCreated)
+          context.go('/client/order/${state.order.orderId}');
         if (state is OrderError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message)),
@@ -69,7 +71,14 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       builder: (context, state) {
         final loading = state is OrderProcessing;
         return Scaffold(
-          appBar: AppBar(title: const Text('Create Order')),
+          appBar: AppBar(
+            leading: IconButton(
+              tooltip: context.t('back'),
+              icon: const Icon(Icons.arrow_back_rounded),
+              onPressed: () => context.go('/client/home'),
+            ),
+            title: Text(context.t('create_order')),
+          ),
           body: Column(
             children: [
               Expanded(

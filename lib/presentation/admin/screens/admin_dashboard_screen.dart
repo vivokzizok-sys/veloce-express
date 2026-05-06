@@ -6,7 +6,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/settings/app_settings.dart';
 import '../../../presentation/auth/bloc/auth_bloc.dart';
+import '../../../presentation/shared/widgets/app_menu_button.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -34,6 +36,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    final user = (context.read<AuthBloc>().state as AuthAuthenticated).user;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -45,31 +48,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text('ADMIN',
-                style: AppTextStyles.label.copyWith(
-                    color: AppColors.adminRole)),
+                style:
+                    AppTextStyles.label.copyWith(color: AppColors.adminRole)),
           ),
           const SizedBox(width: 10),
-          const Text('Dashboard'),
+          Text(context.t('dashboard')),
         ]),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout_rounded, size: 22),
-            color: AppColors.grey500,
-            onPressed: () =>
-                context.read<AuthBloc>().add(AuthSignOutRequested()),
-          ),
+          AppMenuButton(user: user),
         ],
         bottom: TabBar(
           controller: _tabCtrl,
           labelColor: AppColors.accent,
           unselectedLabelColor: AppColors.grey400,
           indicatorColor: AppColors.accent,
-          labelStyle: AppTextStyles.captionMedium.copyWith(
-              fontWeight: FontWeight.w700),
-          tabs: const [
-            Tab(text: 'Approvals'),
-            Tab(text: 'Orders'),
-            Tab(text: 'Users'),
+          labelStyle:
+              AppTextStyles.captionMedium.copyWith(fontWeight: FontWeight.w700),
+          tabs: [
+            const Tab(text: 'Approvals'),
+            const Tab(text: 'Orders'),
+            Tab(text: context.t('users')),
           ],
         ),
       ),
@@ -121,11 +119,11 @@ class _ApprovalsTab extends StatelessWidget {
           itemCount: docs.length,
           itemBuilder: (_, i) {
             final data = docs[i].data() as Map<String, dynamic>;
-            final uid  = docs[i].id;
+            final uid = docs[i].id;
             return _PendingUserCard(
-              uid:  uid,
+              uid: uid,
               data: data,
-              db:   db,
+              db: db,
             );
           },
         );
@@ -139,8 +137,8 @@ class _PendingUserCard extends StatefulWidget {
   final Map<String, dynamic> data;
   final FirebaseFirestore db;
 
-  const _PendingUserCard({
-    required this.uid, required this.data, required this.db});
+  const _PendingUserCard(
+      {required this.uid, required this.data, required this.db});
 
   @override
   State<_PendingUserCard> createState() => _PendingUserCardState();
@@ -158,9 +156,9 @@ class _PendingUserCardState extends State<_PendingUserCard> {
 
       // Log admin action
       await widget.db.collection('admin_logs').add({
-        'action':       approved ? 'user_approved' : 'user_rejected',
+        'action': approved ? 'user_approved' : 'user_rejected',
         'targetUserId': widget.uid,
-        'timestamp':    FieldValue.serverTimestamp(),
+        'timestamp': FieldValue.serverTimestamp(),
       });
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -169,12 +167,12 @@ class _PendingUserCardState extends State<_PendingUserCard> {
 
   @override
   Widget build(BuildContext context) {
-    final name        = widget.data['fullName'] as String? ?? 'Unknown';
-    final email       = widget.data['email'] as String? ?? '';
-    final role        = widget.data['role'] as String? ?? 'client';
+    final name = widget.data['fullName'] as String? ?? 'Unknown';
+    final email = widget.data['email'] as String? ?? '';
+    final role = widget.data['role'] as String? ?? 'client';
     final photoBase64 = widget.data['vehiclePhotoBase64'] as String?;
     final vehicleType = widget.data['vehicleType'] as String?;
-    final isDriver    = role == 'driver';
+    final isDriver = role == 'driver';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -192,23 +190,26 @@ class _PendingUserCardState extends State<_PendingUserCard> {
             child: Row(children: [
               // Avatar
               Container(
-                width: 46, height: 46,
+                width: 46,
+                height: 46,
                 decoration: BoxDecoration(
                   color: isDriver
                       ? AppColors.driverRole.withOpacity(0.1)
                       : AppColors.clientRole.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Center(child: Text(
+                child: Center(
+                    child: Text(
                   name.isNotEmpty ? name[0].toUpperCase() : '?',
                   style: AppTextStyles.title3.copyWith(
-                    color: isDriver
-                        ? AppColors.driverRole : AppColors.clientRole,
+                    color:
+                        isDriver ? AppColors.driverRole : AppColors.clientRole,
                   ),
                 )),
               ),
               const SizedBox(width: 12),
-              Expanded(child: Column(
+              Expanded(
+                  child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(name, style: AppTextStyles.bodyMedium),
@@ -228,8 +229,10 @@ class _PendingUserCardState extends State<_PendingUserCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Vehicle Photo', style: AppTextStyles.captionMedium.copyWith(
-                    color: AppColors.grey700, fontWeight: FontWeight.w600)),
+                  Text('Vehicle Photo',
+                      style: AppTextStyles.captionMedium.copyWith(
+                          color: AppColors.grey700,
+                          fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
@@ -258,16 +261,17 @@ class _PendingUserCardState extends State<_PendingUserCard> {
           // Actions
           Container(
             decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: AppColors.grey100))),
+                border: Border(top: BorderSide(color: AppColors.grey100))),
             child: _loading
                 ? const Padding(
                     padding: EdgeInsets.all(20),
-                    child: Center(child: CircularProgressIndicator(
-                        strokeWidth: 2)),
+                    child: Center(
+                        child: CircularProgressIndicator(strokeWidth: 2)),
                   )
                 : Row(children: [
                     // Reject
-                    Expanded(child: TextButton.icon(
+                    Expanded(
+                        child: TextButton.icon(
                       onPressed: () => _setApproval(false),
                       icon: const Icon(Icons.close_rounded, size: 18),
                       label: const Text('Reject'),
@@ -278,7 +282,8 @@ class _PendingUserCardState extends State<_PendingUserCard> {
                     )),
                     Container(width: 1, height: 44, color: AppColors.grey100),
                     // Approve
-                    Expanded(child: TextButton.icon(
+                    Expanded(
+                        child: TextButton.icon(
                       onPressed: () => _setApproval(true),
                       icon: const Icon(Icons.check_rounded, size: 18),
                       label: const Text('Approve'),
@@ -316,8 +321,9 @@ class _RoleBadge extends StatelessWidget {
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(label, style: AppTextStyles.caption.copyWith(
-        color: color, fontWeight: FontWeight.w700)),
+      child: Text(label,
+          style: AppTextStyles.caption
+              .copyWith(color: color, fontWeight: FontWeight.w700)),
     );
   }
 }
@@ -338,11 +344,11 @@ class _OrdersTabState extends State<_OrdersTab> {
   String _filter = 'all';
 
   final _filters = {
-    'all':        'All',
-    'open':       'Open',
+    'all': 'All',
+    'open': 'Open',
     'inProgress': 'Active',
-    'delivered':  'Done',
-    'cancelled':  'Cancelled',
+    'delivered': 'Done',
+    'cancelled': 'Cancelled',
   };
 
   @override
@@ -371,13 +377,13 @@ class _OrdersTabState extends State<_OrdersTab> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
                   margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
                     color: selected ? AppColors.accent : AppColors.white,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: selected ? AppColors.accent : AppColors.grey200),
+                        color: selected ? AppColors.accent : AppColors.grey200),
                   ),
                   child: Text(e.value,
                       style: AppTextStyles.captionMedium.copyWith(
@@ -432,9 +438,9 @@ class _AdminOrderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status  = data['status'] as String? ?? 'open';
-    final desc    = data['description'] as String? ?? '';
-    final amount  = (data['acceptedBidAmount'] as num?)?.toDouble();
+    final status = data['status'] as String? ?? 'open';
+    final desc = data['description'] as String? ?? '';
+    final amount = (data['acceptedBidAmount'] as num?)?.toDouble();
     final statusColor = _statusColor(status);
 
     return Container(
@@ -447,21 +453,25 @@ class _AdminOrderRow extends StatelessWidget {
       ),
       child: Row(children: [
         Container(
-          width: 8, height: 44,
+          width: 8,
+          height: 44,
           decoration: BoxDecoration(
             color: statusColor,
             borderRadius: BorderRadius.circular(4),
           ),
         ),
         const SizedBox(width: 12),
-        Expanded(child: Column(
+        Expanded(
+            child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('#${orderId.substring(0, 8).toUpperCase()}',
-                style: AppTextStyles.captionMedium.copyWith(
-                    color: AppColors.grey500)),
-            Text(desc, style: AppTextStyles.bodyMedium,
-                maxLines: 1, overflow: TextOverflow.ellipsis),
+                style: AppTextStyles.captionMedium
+                    .copyWith(color: AppColors.grey500)),
+            Text(desc,
+                style: AppTextStyles.bodyMedium,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
           ],
         )),
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -471,14 +481,15 @@ class _AdminOrderRow extends StatelessWidget {
               color: statusColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Text(status, style: AppTextStyles.caption.copyWith(
-              color: statusColor, fontWeight: FontWeight.w700)),
+            child: Text(status,
+                style: AppTextStyles.caption
+                    .copyWith(color: statusColor, fontWeight: FontWeight.w700)),
           ),
           if (amount != null) ...[
             const SizedBox(height: 3),
             Text('\$${amount.toStringAsFixed(2)}',
-                style: AppTextStyles.captionMedium.copyWith(
-                    color: AppColors.success)),
+                style: AppTextStyles.captionMedium
+                    .copyWith(color: AppColors.success)),
           ],
         ]),
       ]),
@@ -486,14 +497,14 @@ class _AdminOrderRow extends StatelessWidget {
   }
 
   Color _statusColor(String s) => switch (s) {
-    'open'       => AppColors.info,
-    'bidding'    => AppColors.warning,
-    'accepted'   => AppColors.accent,
-    'inProgress' => AppColors.success,
-    'delivered'  => AppColors.grey400,
-    'cancelled'  => AppColors.error,
-    _            => AppColors.grey400,
-  };
+        'open' => AppColors.info,
+        'bidding' => AppColors.warning,
+        'accepted' => AppColors.accent,
+        'inProgress' => AppColors.success,
+        'delivered' => AppColors.grey400,
+        'cancelled' => AppColors.error,
+        _ => AppColors.grey400,
+      };
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -518,10 +529,6 @@ class _UsersTabState extends State<_UsersTab> {
         .orderBy('createdAt', descending: true)
         .limit(100);
 
-    if (_roleFilter != 'all') {
-      query = query.where('role', isEqualTo: _roleFilter);
-    }
-
     return Column(
       children: [
         // Role filter
@@ -529,11 +536,13 @@ class _UsersTabState extends State<_UsersTab> {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
           child: Row(children: [
             for (final entry in {
-              'all': 'All', 'client': 'Clients', 'driver': 'Drivers',
+              'all': context.t('all'),
+              'client': context.t('clients'),
+              'driver': context.t('drivers'),
             }.entries)
-              Expanded(child: Padding(
-                padding: EdgeInsets.only(
-                    right: entry.key != 'driver' ? 8 : 0),
+              Expanded(
+                  child: Padding(
+                padding: EdgeInsets.only(right: entry.key != 'driver' ? 8 : 0),
                 child: GestureDetector(
                   onTap: () => setState(() => _roleFilter = entry.key),
                   child: AnimatedContainer(
@@ -541,16 +550,19 @@ class _UsersTabState extends State<_UsersTab> {
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     decoration: BoxDecoration(
                       color: _roleFilter == entry.key
-                          ? AppColors.accent : AppColors.white,
+                          ? AppColors.accent
+                          : AppColors.white,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: _roleFilter == entry.key
-                            ? AppColors.accent : AppColors.grey200),
+                          color: _roleFilter == entry.key
+                              ? AppColors.accent
+                              : AppColors.grey200),
                     ),
                     child: Text(entry.value,
                         style: AppTextStyles.captionMedium.copyWith(
-                          color: _roleFilter == entry.key
-                              ? AppColors.white : AppColors.grey500),
+                            color: _roleFilter == entry.key
+                                ? AppColors.white
+                                : AppColors.grey500),
                         textAlign: TextAlign.center),
                   ),
                 ),
@@ -566,20 +578,26 @@ class _UsersTabState extends State<_UsersTab> {
               if (snap.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
-              if (!snap.hasData || snap.data!.docs.isEmpty) {
+              final docs = (snap.data?.docs ?? []).where((doc) {
+                if (_roleFilter == 'all') return true;
+                final data = doc.data() as Map<String, dynamic>;
+                return data['role'] == _roleFilter;
+              }).toList();
+
+              if (docs.isEmpty) {
                 return _EmptyAdminState(
                   icon: Icons.people_outline_rounded,
                   color: AppColors.grey400,
-                  title: 'No users',
-                  subtitle: 'No users found.',
+                  title: context.t('no_users'),
+                  subtitle: context.t('no_users_found'),
                 );
               }
 
               return ListView.builder(
                 padding: const EdgeInsets.all(16),
-                itemCount: snap.data!.docs.length,
+                itemCount: docs.length,
                 itemBuilder: (_, i) {
-                  final doc  = snap.data!.docs[i];
+                  final doc = docs[i];
                   final data = doc.data() as Map<String, dynamic>;
                   return _UserRow(uid: doc.id, data: data, db: widget.db);
                 },
@@ -597,16 +615,15 @@ class _UserRow extends StatelessWidget {
   final Map<String, dynamic> data;
   final FirebaseFirestore db;
 
-  const _UserRow({
-    required this.uid, required this.data, required this.db});
+  const _UserRow({required this.uid, required this.data, required this.db});
 
   @override
   Widget build(BuildContext context) {
-    final name       = data['fullName'] as String? ?? 'Unknown';
-    final email      = data['email'] as String? ?? '';
-    final role       = data['role'] as String? ?? 'client';
+    final name = data['fullName'] as String? ?? 'Unknown';
+    final email = data['email'] as String? ?? '';
+    final role = data['role'] as String? ?? 'client';
     final isApproved = data['isApproved'] as bool? ?? false;
-    final rating     = (data['rating'] as num?)?.toDouble() ?? 0.0;
+    final rating = (data['rating'] as num?)?.toDouble() ?? 0.0;
     final deliveries = data['totalDeliveries'] as int? ?? 0;
 
     final roleColor = role == 'driver'
@@ -626,25 +643,30 @@ class _UserRow extends StatelessWidget {
       child: Row(children: [
         // Avatar
         Container(
-          width: 40, height: 40,
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
             color: roleColor.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
-          child: Center(child: Text(
+          child: Center(
+              child: Text(
             name.isNotEmpty ? name[0].toUpperCase() : '?',
             style: AppTextStyles.bodyMedium.copyWith(color: roleColor),
           )),
         ),
         const SizedBox(width: 12),
-        Expanded(child: Column(
+        Expanded(
+            child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(name, style: AppTextStyles.bodyMedium),
-            Text(email, style: AppTextStyles.caption,
-                maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(email,
+                style: AppTextStyles.caption,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
             if (role == 'driver')
-              Text('⭐ ${ rating.toStringAsFixed(1)} · $deliveries trips',
+              Text('⭐ ${rating.toStringAsFixed(1)} · $deliveries trips',
                   style: AppTextStyles.caption),
           ],
         )),
@@ -658,8 +680,7 @@ class _UserRow extends StatelessWidget {
               'isApproved': !isApproved,
             }),
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 8, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 color: isApproved
                     ? AppColors.success.withOpacity(0.1)
@@ -695,13 +716,15 @@ class _UserRow extends StatelessWidget {
 
 class _EmptyAdminState extends StatelessWidget {
   final IconData icon;
-  final Color    color;
-  final String   title;
-  final String   subtitle;
+  final Color color;
+  final String title;
+  final String subtitle;
 
   const _EmptyAdminState({
-    required this.icon, required this.color,
-    required this.title, required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
   });
 
   @override
@@ -711,7 +734,8 @@ class _EmptyAdminState extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 72, height: 72,
+            width: 72,
+            height: 72,
             decoration: BoxDecoration(
               color: color.withOpacity(0.1),
               shape: BoxShape.circle,
@@ -721,8 +745,8 @@ class _EmptyAdminState extends StatelessWidget {
           const SizedBox(height: 16),
           Text(title, style: AppTextStyles.title3),
           const SizedBox(height: 6),
-          Text(subtitle, style: AppTextStyles.body.copyWith(
-              color: AppColors.grey500)),
+          Text(subtitle,
+              style: AppTextStyles.body.copyWith(color: AppColors.grey500)),
         ],
       ),
     );

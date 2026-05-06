@@ -130,7 +130,8 @@ class OrderRepositoryImpl implements OrderRepository {
       await _db.runTransaction((tx) async {
         final orderSnap = await tx.get(orderRef);
         if (!orderSnap.exists) {
-          throw FirebaseException(plugin: 'firestore', message: 'Order not found');
+          throw FirebaseException(
+              plugin: 'firestore', message: 'Order not found');
         }
         final orderData = orderSnap.data() as Map<String, dynamic>;
         final status = orderData['status'] as String? ?? 'open';

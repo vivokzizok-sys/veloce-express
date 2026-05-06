@@ -78,7 +78,8 @@ class _ActiveTripScreenState extends State<ActiveTripScreen>
       vsync: this,
       duration: const Duration(milliseconds: 480),
     );
-    _panelAnim = CurvedAnimation(parent: _panelCtrl, curve: Curves.easeOutCubic);
+    _panelAnim =
+        CurvedAnimation(parent: _panelCtrl, curve: Curves.easeOutCubic);
     _panelCtrl.forward();
     _pulseCtrl = AnimationController(
       vsync: this,
@@ -93,7 +94,9 @@ class _ActiveTripScreenState extends State<ActiveTripScreen>
             driverId: me.uid,
           ));
     } else {
-      context.read<TrackingBloc>().add(TrackingWatchDriver(widget.otherParty.uid));
+      context
+          .read<TrackingBloc>()
+          .add(TrackingWatchDriver(widget.otherParty.uid));
     }
   }
 
@@ -175,6 +178,11 @@ class _ActiveTripScreenState extends State<ActiveTripScreen>
                   child: _TopStatusBar(
                     order: widget.order,
                     pulseCtrl: _pulseCtrl,
+                    onBack: () async {
+                      final leave = await _confirmExit(context);
+                      if (!context.mounted || !leave) return;
+                      context.go(_isDriver ? '/driver/home' : '/client/home');
+                    },
                   ),
                 ),
                 Positioned(
@@ -196,7 +204,8 @@ class _ActiveTripScreenState extends State<ActiveTripScreen>
                             ? widget.order.clientPhone
                             : widget.otherParty.phoneNumber,
                       ),
-                      onComplete: _isDriver ? () => _confirmTrip(context) : null,
+                      onComplete:
+                          _isDriver ? () => _confirmTrip(context) : null,
                     ),
                   ),
                 ),
@@ -279,8 +288,13 @@ class _ActiveTripScreenState extends State<ActiveTripScreen>
 class _TopStatusBar extends StatelessWidget {
   final OrderEntity order;
   final AnimationController pulseCtrl;
+  final VoidCallback onBack;
 
-  const _TopStatusBar({required this.order, required this.pulseCtrl});
+  const _TopStatusBar({
+    required this.order,
+    required this.pulseCtrl,
+    required this.onBack,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -289,6 +303,11 @@ class _TopStatusBar extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
         child: Row(
           children: [
+            IconButton.filledTonal(
+              onPressed: onBack,
+              icon: const Icon(Icons.arrow_back_rounded),
+            ),
+            const SizedBox(width: 8),
             AnimatedBuilder(
               animation: pulseCtrl,
               builder: (_, __) => Container(
@@ -420,7 +439,8 @@ class _BottomPanel extends StatelessWidget {
                         isDriver ? 'Client' : 'Your Driver',
                         style: AppTextStyles.caption,
                       ),
-                      Text(otherParty.fullName, style: AppTextStyles.bodyMedium),
+                      Text(otherParty.fullName,
+                          style: AppTextStyles.bodyMedium),
                     ],
                   ),
                 ),

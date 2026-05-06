@@ -89,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 12),
                       TextButton(
-                        onPressed: () => context.go('/signup'),
+                        onPressed: () => context.push('/signup'),
                         child: const Text('Create an account'),
                       ),
                     ],

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/settings/app_settings.dart';
 import '../../../data/models/bid_model.dart';
 import '../../../data/models/order_model.dart';
 import '../../../domain/entities/bid_entity.dart';
@@ -51,7 +52,14 @@ class OrderDetailScreen extends StatelessWidget {
           }
           final order = OrderModel.fromFirestore(snap.data!);
           return Scaffold(
-            appBar: AppBar(title: const Text('Order')),
+            appBar: AppBar(
+              leading: IconButton(
+                tooltip: context.t('back'),
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: () => context.go('/client/home'),
+              ),
+              title: Text(context.t('order')),
+            ),
             body: ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -93,7 +101,8 @@ class _OrderSummary extends StatelessWidget {
                 child: const Icon(Icons.inventory_2_outlined),
               ),
               const SizedBox(width: 10),
-              Expanded(child: Text(order.description, style: AppTextStyles.title3)),
+              Expanded(
+                  child: Text(order.description, style: AppTextStyles.title3)),
               StatusChip(label: order.status.value, color: AppColors.accent),
             ],
           ),
@@ -107,7 +116,8 @@ class _OrderSummary extends StatelessWidget {
             const SizedBox(height: 14),
             Text(
               'Accepted fare: \$${order.acceptedBidAmount!.toStringAsFixed(2)}',
-              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.success),
+              style:
+                  AppTextStyles.bodyMedium.copyWith(color: AppColors.success),
             ),
           ],
         ],
@@ -135,7 +145,8 @@ class _BidsList extends StatelessWidget {
           return const Center(child: CircularProgressIndicator(strokeWidth: 2));
         }
         final bids = snap.data!.docs
-            .map((doc) => BidModel.fromFirestore(orderId: order.orderId, doc: doc))
+            .map((doc) =>
+                BidModel.fromFirestore(orderId: order.orderId, doc: doc))
             .toList();
         if (bids.isEmpty) {
           return const EmptyState(
@@ -145,7 +156,8 @@ class _BidsList extends StatelessWidget {
           );
         }
         return Column(
-          children: bids.map((bid) => _BidTile(order: order, bid: bid)).toList(),
+          children:
+              bids.map((bid) => _BidTile(order: order, bid: bid)).toList(),
         );
       },
     );
@@ -161,7 +173,8 @@ class _BidTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canAct = bid.status == BidStatus.pending &&
-        (order.status == OrderStatus.open || order.status == OrderStatus.bidding);
+        (order.status == OrderStatus.open ||
+            order.status == OrderStatus.bidding);
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
