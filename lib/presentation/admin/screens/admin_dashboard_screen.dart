@@ -10,6 +10,7 @@ import '../../../core/settings/app_settings.dart';
 import '../../../core/utils/currency.dart';
 import '../../../presentation/auth/bloc/auth_bloc.dart';
 import '../../../presentation/shared/widgets/app_menu_button.dart';
+import '../../../presentation/shared/widgets/shared_widgets.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -26,7 +27,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 3, vsync: this);
+    _tabCtrl = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -63,6 +64,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         ],
         bottom: TabBar(
           controller: _tabCtrl,
+          isScrollable: true,
           labelColor: AppColors.accent,
           unselectedLabelColor: AppColors.grey400,
           indicatorColor: AppColors.accent,
@@ -72,6 +74,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             Tab(text: context.t('approvals')),
             Tab(text: context.t('orders')),
             Tab(text: context.t('users')),
+            Tab(text: context.t('tickets')),
           ],
         ),
       ),
@@ -81,6 +84,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           _ApprovalsTab(db: _db),
           _OrdersTab(db: _db),
           _UsersTab(db: _db),
+          _TicketsTab(db: _db),
         ],
       ),
     );
@@ -359,12 +363,21 @@ class _OrdersTab extends StatefulWidget {
 
 class _OrdersTabState extends State<_OrdersTab> {
   String _filter = 'all';
+  final _search = TextEditingController();
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final filters = {
       'all': context.t('all'),
       'open': context.statusText('open'),
+      'bidding': context.statusText('bidding'),
+      'accepted': context.statusText('accepted'),
       'inProgress': context.statusText('inProgress'),
       'delivered': context.statusText('delivered'),
       'cancelled': context.statusText('cancelled'),
@@ -380,6 +393,17 @@ class _OrdersTabState extends State<_OrdersTab> {
 
     return Column(
       children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: TextField(
+            controller: _search,
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(
+              hintText: context.t('search'),
+              prefixIcon: const Icon(Icons.search_rounded),
+            ),
+          ),
+        ),
         // Filter chips
         SizedBox(
           height: 52,
@@ -432,13 +456,22 @@ class _OrdersTabState extends State<_OrdersTab> {
                 );
               }
 
+              final search = _search.text.trim().toLowerCase();
+              final docs = snap.data!.docs.where((doc) {
+                if (search.isEmpty) return true;
+                final data = doc.data() as Map<String, dynamic>;
+                final text =
+                    '${doc.id} ${data['description']} ${data['pickupAddress']} ${data['dropoffAddress']} ${data['clientName']}'
+                        .toLowerCase();
+                return text.contains(search);
+              }).toList();
+
               return ListView.builder(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                itemCount: snap.data!.docs.length,
+                itemCount: docs.length,
                 itemBuilder: (_, i) {
-                  final data =
-                      snap.data!.docs[i].data() as Map<String, dynamic>;
-                  final id = snap.data!.docs[i].id;
+                  final data = docs[i].data() as Map<String, dynamic>;
+                  final id = docs[i].id;
                   return _AdminOrderRow(orderId: id, data: data);
                 },
               );
@@ -734,6 +767,161 @@ class _UserRow extends StatelessWidget {
 }
 
 // ── Shared Empty State ────────────────────────────────────────
+
+class _TicketsTab extends StatelessWidget {
+  final FirebaseFirestore db;
+
+  const _TicketsTab({required this.db});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: db
+          .collection('support_tickets')
+          .orderBy('createdAt', descending: true)
+          .limit(100)
+          .snapshots(),
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final docs = snap.data?.docs ?? [];
+        if (docs.isEmpty) {
+          return _EmptyAdminState(
+            icon: Icons.support_agent_rounded,
+            color: AppColors.grey400,
+            title: context.t('no_tickets'),
+            subtitle: context.t('all_caught_up'),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: docs.length,
+          itemBuilder: (_, index) {
+            final doc = docs[index];
+            return _TicketCard(ticketId: doc.id, data: doc.data(), db: db);
+          },
+        );
+      },
+    );
+  }
+}
+
+class _TicketCard extends StatelessWidget {
+  final String ticketId;
+  final Map<String, dynamic> data;
+  final FirebaseFirestore db;
+
+  const _TicketCard({
+    required this.ticketId,
+    required this.data,
+    required this.db,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final type = data['type'] as String? ?? 'support';
+    final status = data['status'] as String? ?? 'open';
+    final name = data['createdByName'] as String? ?? context.t('unknown');
+    final message = data['message'] as String? ?? '';
+    final orderId = data['orderId'] as String?;
+    final reportedUserId = data['reportedUserId'] as String?;
+    final isOpen = status == 'open';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface(context),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                type == 'report'
+                    ? Icons.report_problem_outlined
+                    : Icons.support_agent_rounded,
+                color: isOpen ? AppColors.warning : AppColors.success,
+              ),
+              const SizedBox(width: 10),
+              Expanded(child: Text(name, style: AppTextStyles.bodyMedium)),
+              StatusChip(
+                label:
+                    isOpen ? context.statusText('open') : context.t('closed'),
+                color: isOpen ? AppColors.warning : AppColors.success,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            message,
+            style: AppTextStyles.body.copyWith(
+              color: AppColors.textPrimary(context),
+            ),
+          ),
+          if (orderId != null || reportedUserId != null) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (orderId != null)
+                  _MiniMeta(label: '${context.t('order')}: $orderId'),
+                if (reportedUserId != null)
+                  _MiniMeta(
+                    label: '${context.t('reported_user')}: $reportedUserId',
+                  ),
+              ],
+            ),
+          ],
+          if (isOpen) ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: TextButton.icon(
+                onPressed: () =>
+                    db.collection('support_tickets').doc(ticketId).update({
+                  'status': 'closed',
+                  'closedAt': FieldValue.serverTimestamp(),
+                  'updatedAt': FieldValue.serverTimestamp(),
+                }),
+                icon: const Icon(Icons.check_circle_outline_rounded),
+                label: Text(context.t('close_ticket')),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniMeta extends StatelessWidget {
+  final String label;
+
+  const _MiniMeta({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt(context),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.caption.copyWith(
+          color: AppColors.textSecondary(context),
+        ),
+      ),
+    );
+  }
+}
 
 class _EmptyAdminState extends StatelessWidget {
   final IconData icon;

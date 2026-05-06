@@ -18,7 +18,6 @@ class UserModel extends UserEntity {
     super.rating,
     super.totalDeliveries,
     super.currentLocation,
-    super.fcmToken,
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -41,7 +40,6 @@ class UserModel extends UserEntity {
       currentLocation: geo == null
           ? null
           : LocationPoint(latitude: geo.latitude, longitude: geo.longitude),
-      fcmToken: data['fcmToken'] as String?,
     );
   }
 
@@ -58,7 +56,6 @@ class UserModel extends UserEntity {
       'vehiclePhotoContentType': vehiclePhotoContentType,
       'rating': rating,
       'totalDeliveries': totalDeliveries,
-      'fcmToken': fcmToken,
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }

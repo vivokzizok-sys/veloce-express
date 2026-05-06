@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -25,11 +24,6 @@ import 'presentation/auth/bloc/auth_bloc.dart';
 import 'presentation/order/bloc/order_bloc.dart';
 import 'presentation/tracking/bloc/tracking_bloc.dart';
 
-@pragma('vm:entry-point')
-Future<void> firebaseMessagingBackground(RemoteMessage message) async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-}
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([
@@ -43,7 +37,6 @@ Future<void> main() async {
   ));
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackground);
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
@@ -95,38 +88,17 @@ class _VeloceExpressAppState extends State<VeloceExpressApp> {
       locationService: _locationSvc,
     );
 
-    _initFCM();
+    _initNotifications();
   }
 
-  Future<void> _initFCM() async {
-    final messaging = FirebaseMessaging.instance;
-    await messaging.requestPermission(alert: true, badge: true, sound: true);
+  Future<void> _initNotifications() async {
     await _notificationSvc.initialize();
     _authSub = _authBloc.stream.listen((state) async {
       if (state is AuthAuthenticated) {
-        final token = await messaging.getToken();
-        if (token != null) {
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(state.user.uid)
-              .update({'fcmToken': token});
-        }
         await _notificationSvc.watchUserNotifications(state.user.uid);
       } else {
         await _notificationSvc.stopWatching();
       }
-    });
-    FirebaseMessaging.instance.onTokenRefresh.listen((token) async {
-      final state = _authBloc.state;
-      if (state is! AuthAuthenticated) return;
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(state.user.uid)
-          .update({'fcmToken': token});
-    });
-    FirebaseMessaging.onMessage.listen((message) async {
-      debugPrint('FCM foreground: ${message.notification?.title}');
-      await _notificationSvc.showRemoteMessage(message);
     });
   }
 

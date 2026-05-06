@@ -47,7 +47,6 @@ class UserEntity {
   final double rating;
   final int totalDeliveries;
   final LocationPoint? currentLocation;
-  final String? fcmToken;
 
   const UserEntity({
     required this.uid,
@@ -63,7 +62,6 @@ class UserEntity {
     this.rating = 0,
     this.totalDeliveries = 0,
     this.currentLocation,
-    this.fcmToken,
   });
 
   bool get isDriver => role == UserRole.driver;
@@ -73,7 +71,6 @@ class UserEntity {
     bool? isEmailVerified,
     bool? isApproved,
     LocationPoint? currentLocation,
-    String? fcmToken,
   }) {
     return UserEntity(
       uid: uid,
@@ -89,7 +86,6 @@ class UserEntity {
       rating: rating,
       totalDeliveries: totalDeliveries,
       currentLocation: currentLocation ?? this.currentLocation,
-      fcmToken: fcmToken ?? this.fcmToken,
     );
   }
 }

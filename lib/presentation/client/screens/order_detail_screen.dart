@@ -61,11 +61,33 @@ class OrderDetailScreen extends StatelessWidget {
                 onPressed: () => context.go('/client/home'),
               ),
               title: Text(context.t('order')),
+              actions: [
+                IconButton(
+                  tooltip: context.t('support'),
+                  icon: const Icon(Icons.support_agent_rounded),
+                  onPressed: () => context.push('/support', extra: {
+                    'orderId': order.orderId,
+                    'reportedUserId': order.driverId,
+                  }),
+                ),
+              ],
             ),
             body: ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 _OrderSummary(order: order),
+                if (order.status == OrderStatus.open ||
+                    order.status == OrderStatus.bidding) ...[
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () => _showCancelSheet(context, order),
+                    icon: const Icon(Icons.cancel_outlined),
+                    label: Text(context.t('cancel_order')),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.error,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 18),
                 Text(context.t('bids'),
                     style: AppTextStyles.title3.copyWith(
@@ -78,6 +100,61 @@ class OrderDetailScreen extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+
+  Future<void> _showCancelSheet(BuildContext context, OrderEntity order) async {
+    final reason = TextEditingController();
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: AppColors.surface(context),
+      builder: (_) => AppSettingsScope(
+        controller: context.settings,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            8,
+            20,
+            MediaQuery.viewInsetsOf(context).bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(context.t('cancel_order'), style: AppTextStyles.title2),
+              const SizedBox(height: 14),
+              AppTextField(
+                controller: reason,
+                hint: context.t('cancel_reason'),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+              PrimaryButton(
+                label: context.t('cancel_order'),
+                backgroundColor: AppColors.error,
+                onPressed: () => Navigator.pop(context, true),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    await FirebaseFirestore.instance
+        .collection('orders')
+        .doc(order.orderId)
+        .update({
+      'status': 'cancelled',
+      'cancelReason': reason.text.trim(),
+      'cancelledBy': order.clientId,
+      'cancelledAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.t('order_cancelled'))),
     );
   }
 }
@@ -138,6 +215,13 @@ class _OrderSummary extends StatelessWidget {
               '${context.t('accepted_fare')}: ${CurrencyFormatter.da(order.acceptedBidAmount!)}',
               style:
                   AppTextStyles.bodyMedium.copyWith(color: AppColors.success),
+            ),
+          ],
+          if (order.status == OrderStatus.cancelled) ...[
+            const SizedBox(height: 14),
+            Text(
+              context.t('cancelled_by'),
+              style: AppTextStyles.caption,
             ),
           ],
         ],

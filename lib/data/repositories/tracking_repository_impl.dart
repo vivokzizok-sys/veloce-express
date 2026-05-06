@@ -101,6 +101,7 @@ class TrackingRepositoryImpl implements TrackingRepository {
         tx.update(driverRef, {
           'rating': newRating,
           'totalDeliveries': newCount,
+          'lastRatingOrderId': orderId,
           'updatedAt': FieldValue.serverTimestamp(),
         });
         tx.update(orderRef, {

@@ -499,6 +499,15 @@ class _BottomPanel extends StatelessWidget {
                 ],
               ),
             ],
+            const SizedBox(height: 14),
+            OutlinedButton.icon(
+              onPressed: () => context.push('/support', extra: {
+                'orderId': order.orderId,
+                'reportedUserId': otherParty.uid,
+              }),
+              icon: const Icon(Icons.report_problem_outlined, size: 18),
+              label: Text(context.t('report_problem')),
+            ),
             if (isDriver && onComplete != null) ...[
               const SizedBox(height: 18),
               PrimaryButton(
@@ -705,7 +714,10 @@ class _RatingSheetState extends State<_RatingSheet>
                 : null,
           ),
           TextButton(
-            onPressed: () => widget.onSubmit(0, null),
+            onPressed: () {
+              Navigator.pop(context);
+              context.go('/client/home');
+            },
             child: Text(context.t('skip')),
           ),
         ],

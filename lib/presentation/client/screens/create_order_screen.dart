@@ -69,9 +69,13 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   AppTextField(
                     controller: _pickupAddress,
                     hint: context.t('pickup_address'),
-                    validator: (v) => v == null || v.trim().isEmpty
-                        ? context.t('field_required')
-                        : null,
+                    validator: (v) {
+                      final text = v?.trim() ?? '';
+                      if (text.isEmpty) return context.t('field_required');
+                      return text.length >= 6
+                          ? null
+                          : context.t('address_too_short');
+                    },
                   ),
                   const SizedBox(height: 14),
                   Text(context.t('dropoff'),
@@ -80,9 +84,17 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   AppTextField(
                     controller: _dropoffAddress,
                     hint: context.t('dropoff_address'),
-                    validator: (v) => v == null || v.trim().isEmpty
-                        ? context.t('field_required')
-                        : null,
+                    validator: (v) {
+                      final text = v?.trim() ?? '';
+                      if (text.isEmpty) return context.t('field_required');
+                      if (text.length < 6)
+                        return context.t('address_too_short');
+                      if (text.toLowerCase() ==
+                          _pickupAddress.text.trim().toLowerCase()) {
+                        return context.t('addresses_must_differ');
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 14),
                   AppTextField(

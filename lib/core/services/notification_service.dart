@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -62,18 +61,6 @@ class NotificationService {
       body,
       details,
       payload: payload,
-    );
-  }
-
-  Future<void> showRemoteMessage(RemoteMessage message) async {
-    final notification = message.notification;
-    final title = notification?.title ?? message.data['title'] as String?;
-    final body = notification?.body ?? message.data['body'] as String?;
-    if (title == null && body == null) return;
-    await show(
-      title: title ?? 'Veloce Express',
-      body: body ?? '',
-      payload: message.data['orderId'] as String?,
     );
   }
 

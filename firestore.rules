@@ -44,9 +44,27 @@ service cloud.firestore {
         && (request.auth.uid == uid || isAdmin() || isApproved());
 
       allow update: if signedIn() && request.auth.uid == uid
-        && !request.resource.data.diff(resource.data)
+        && request.resource.data.diff(resource.data)
           .affectedKeys()
-          .hasAny(['isApproved', 'role']);
+          .hasOnly([
+            'fullName',
+            'phoneNumber',
+            'email',
+            'isEmailVerified',
+            'currentLocation',
+            'locationUpdatedAt',
+            'updatedAt'
+          ]);
+
+      allow update: if isClient()
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly(['rating', 'totalDeliveries', 'lastRatingOrderId', 'updatedAt'])
+        && request.resource.data.lastRatingOrderId is string
+        && getAfter(/databases/$(database)/documents/orders/$(request.resource.data.lastRatingOrderId)).data.clientId == request.auth.uid
+        && getAfter(/databases/$(database)/documents/orders/$(request.resource.data.lastRatingOrderId)).data.driverId == uid
+        && getAfter(/databases/$(database)/documents/orders/$(request.resource.data.lastRatingOrderId)).data.status == 'delivered'
+        && getAfter(/databases/$(database)/documents/orders/$(request.resource.data.lastRatingOrderId)).data.clientRating is number;
 
       allow update: if isAdmin();
       allow delete: if isAdmin();
@@ -63,7 +81,47 @@ service cloud.firestore {
 
       allow update: if isClient()
         && resource.data.clientId == request.auth.uid
-        && request.resource.data.clientId == resource.data.clientId;
+        && request.resource.data.clientId == resource.data.clientId
+        && resource.data.status in ['open', 'bidding']
+        && request.resource.data.status == 'accepted'
+        && request.resource.data.driverId is string
+        && request.resource.data.acceptedBidId is string
+        && request.resource.data.acceptedBidAmount is number
+        && exists(/databases/$(database)/documents/orders/$(orderId)/bids/$(request.resource.data.acceptedBidId))
+        && get(/databases/$(database)/documents/orders/$(orderId)/bids/$(request.resource.data.acceptedBidId)).data.driverId == request.resource.data.driverId
+        && get(/databases/$(database)/documents/orders/$(orderId)/bids/$(request.resource.data.acceptedBidId)).data.amount == request.resource.data.acceptedBidAmount
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly([
+            'status',
+            'driverId',
+            'acceptedBidId',
+            'acceptedBidAmount',
+            'acceptedAt',
+            'updatedAt'
+          ]);
+
+      allow update: if isClient()
+        && resource.data.clientId == request.auth.uid
+        && request.resource.data.clientId == resource.data.clientId
+        && resource.data.status in ['open', 'bidding']
+        && request.resource.data.status == 'cancelled'
+        && request.resource.data.cancelledBy == request.auth.uid
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly(['status', 'cancelReason', 'cancelledBy', 'cancelledAt', 'updatedAt']);
+
+      allow update: if isClient()
+        && resource.data.clientId == request.auth.uid
+        && request.resource.data.clientId == resource.data.clientId
+        && resource.data.status == 'delivered'
+        && (!('clientRating' in resource.data) || resource.data.clientRating == null)
+        && request.resource.data.clientRating is number
+        && request.resource.data.clientRating >= 0
+        && request.resource.data.clientRating <= 5
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly(['clientRating', 'clientRatingComment', 'ratedAt']);
 
       allow update: if isDriver()
         && resource.data.status in ['open', 'bidding']
@@ -75,7 +133,21 @@ service cloud.firestore {
 
       allow update: if isDriver()
         && resource.data.driverId == request.auth.uid
-        && request.resource.data.driverId == resource.data.driverId;
+        && request.resource.data.driverId == resource.data.driverId
+        && resource.data.status == 'accepted'
+        && request.resource.data.status == 'inProgress'
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly(['status', 'startedAt', 'updatedAt']);
+
+      allow update: if isDriver()
+        && resource.data.driverId == request.auth.uid
+        && request.resource.data.driverId == resource.data.driverId
+        && resource.data.status == 'inProgress'
+        && request.resource.data.status == 'delivered'
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly(['status', 'deliveredAt', 'updatedAt']);
 
       allow update, delete: if isAdmin();
 
@@ -83,7 +155,18 @@ service cloud.firestore {
         allow create: if isDriver()
           && bidId == request.auth.uid
           && request.resource.data.driverId == request.auth.uid
-          && request.resource.data.status == 'pending';
+          && request.resource.data.status == 'pending'
+          && request.resource.data.amount is number
+          && request.resource.data.amount > 0
+          && request.resource.data.keys().hasOnly([
+            'driverId',
+            'driverName',
+            'driverRating',
+            'amount',
+            'status',
+            'updatedAt',
+            'createdAt'
+          ]);
 
         allow read: if isAdmin()
           || isDriver()
@@ -91,7 +174,12 @@ service cloud.firestore {
             && get(/databases/$(database)/documents/orders/$(orderId)).data.clientId == request.auth.uid);
 
         allow update: if isClient()
-          && get(/databases/$(database)/documents/orders/$(orderId)).data.clientId == request.auth.uid;
+          && get(/databases/$(database)/documents/orders/$(orderId)).data.clientId == request.auth.uid
+          && resource.data.status == 'pending'
+          && request.resource.data.status in ['accepted', 'rejected']
+          && request.resource.data.diff(resource.data)
+            .affectedKeys()
+            .hasOnly(['status', 'updatedAt']);
 
         allow update, delete: if isAdmin();
       }
@@ -106,6 +194,23 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data)
           .affectedKeys()
           .hasOnly(['read', 'readAt']);
+      allow delete: if isAdmin();
+    }
+
+    match /support_tickets/{ticketId} {
+      allow create: if isApproved()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.status == 'open'
+        && request.resource.data.type in ['support', 'report', 'payment'];
+
+      allow read: if isAdmin()
+        || (isApproved() && resource.data.createdBy == request.auth.uid);
+
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly(['status', 'adminNote', 'updatedAt', 'closedAt']);
+
       allow delete: if isAdmin();
     }
 

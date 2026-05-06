@@ -76,6 +76,35 @@ class AppStrings {
     'trips_label': 'trips',
     'menu': 'Menu',
     'settings': 'Settings',
+    'support': 'Support',
+    'support_center': 'Support center',
+    'support_request': 'Support request',
+    'report_problem': 'Report a problem',
+    'payment_issue': 'Payment issue',
+    'ticket_type': 'Ticket type',
+    'support_message': 'Describe what happened',
+    'support_sent': 'Your message was sent.',
+    'send': 'Send',
+    'message_too_short': 'Write at least 12 characters',
+    'privacy_policy': 'Privacy policy',
+    'terms': 'Terms',
+    'legal': 'Legal',
+    'privacy_1':
+        'Veloce Express stores the account information needed to run deliveries: name, email, phone number, role, orders, bids, ratings, and support messages.',
+    'privacy_2':
+        'Driver vehicle photos are stored in Firestore as compressed Base64 data because Firebase Storage is not used in this version.',
+    'privacy_3':
+        'Location data is only used for active delivery operations and may be visible to the matched client or driver during the trip.',
+    'privacy_4':
+        'Users can request support or report a problem from inside the app. Admins can review tickets to protect the service.',
+    'terms_1':
+        'Users must provide correct account, phone, pickup, and drop-off information.',
+    'terms_2':
+        'Drivers are responsible for submitting realistic bids and confirming delivery only after handing the item to the client.',
+    'terms_3':
+        'Clients are responsible for accepting a bid only when they agree with the price and details.',
+    'terms_4':
+        'Admins may approve, block, or review accounts and tickets to protect Veloce Express users.',
     'account_settings': 'Account settings',
     'appearance': 'Appearance',
     'light': 'Light',
@@ -183,6 +212,12 @@ class AppStrings {
     'confirm_trip_body': 'Confirm only after handing the item to the client.',
     'yes_completed': 'Yes, Completed',
     'cancel': 'Cancel',
+    'cancel_order': 'Cancel order',
+    'cancel_reason': 'Cancellation reason',
+    'cancelled_by': 'Cancelled by',
+    'order_cancelled': 'Order cancelled.',
+    'address_too_short': 'Write a clearer address',
+    'addresses_must_differ': 'Pickup and drop-off must be different',
     'rate_experience': 'Rate your experience',
     'how_was': 'How was',
     'submit_rating': 'Submit Rating',
@@ -197,6 +232,7 @@ class AppStrings {
     'no_orders_filter': 'No orders match this filter.',
     'approved': 'Approved',
     'blocked': 'Blocked',
+    'closed': 'Closed',
     'verify_email': 'Verify your email',
     'verify_email_body':
         'We sent a verification link to {email}. The app will continue automatically after verification.',
@@ -216,6 +252,11 @@ class AppStrings {
     'total_earned': 'Total earned',
     'available_jobs': 'Available jobs',
     'statistics': 'Statistics',
+    'tickets': 'Tickets',
+    'no_tickets': 'No support tickets',
+    'close_ticket': 'Close ticket',
+    'search': 'Search',
+    'reported_user': 'Reported user',
   };
 
   static const _ar = <String, String>{
@@ -224,6 +265,35 @@ class AppStrings {
     'trips_label': 'رحلات',
     'menu': 'القائمة',
     'settings': 'الإعدادات',
+    'support': 'الدعم',
+    'support_center': 'مركز الدعم',
+    'support_request': 'طلب دعم',
+    'report_problem': 'الإبلاغ عن مشكلة',
+    'payment_issue': 'مشكلة دفع',
+    'ticket_type': 'نوع الطلب',
+    'support_message': 'اشرح ما حدث',
+    'support_sent': 'تم إرسال رسالتك.',
+    'send': 'إرسال',
+    'message_too_short': 'اكتب 12 حرفاً على الأقل',
+    'privacy_policy': 'سياسة الخصوصية',
+    'terms': 'الشروط',
+    'legal': 'القانونية',
+    'privacy_1':
+        'يحفظ Veloce Express بيانات الحساب الضرورية لتشغيل التوصيل: الاسم والبريد ورقم الهاتف والدور والطلبات والعروض والتقييمات ورسائل الدعم.',
+    'privacy_2':
+        'صور مركبات السائقين تحفظ في Firestore بصيغة Base64 مضغوطة لأن Firebase Storage غير مستخدم في هذه النسخة.',
+    'privacy_3':
+        'بيانات الموقع تستخدم فقط أثناء الرحلات النشطة وقد تظهر للطرف الآخر المرتبط بالرحلة.',
+    'privacy_4':
+        'يمكن للمستخدمين طلب الدعم أو الإبلاغ عن مشكلة من داخل التطبيق، ويمكن للأدمن مراجعة البلاغات لحماية الخدمة.',
+    'terms_1':
+        'يجب على المستخدمين إدخال معلومات حساب وهاتف وانطلاق ووصول صحيحة.',
+    'terms_2':
+        'السائق مسؤول عن إرسال عرض واقعي وتأكيد التسليم فقط بعد تسليم الشيء للزبون.',
+    'terms_3':
+        'الزبون مسؤول عن قبول العرض فقط عندما يوافق على السعر والتفاصيل.',
+    'terms_4':
+        'يمكن للأدمن قبول أو حظر الحسابات ومراجعة البلاغات لحماية مستخدمي Veloce Express.',
     'account_settings': 'إعدادات الحساب',
     'appearance': 'المظهر',
     'light': 'نهار',
@@ -332,6 +402,12 @@ class AppStrings {
     'confirm_trip_body': 'أكد فقط بعد تسليم الشيء إلى الزبون.',
     'yes_completed': 'نعم، تم التسليم',
     'cancel': 'إلغاء',
+    'cancel_order': 'إلغاء الطلب',
+    'cancel_reason': 'سبب الإلغاء',
+    'cancelled_by': 'ألغاه',
+    'order_cancelled': 'تم إلغاء الطلب.',
+    'address_too_short': 'اكتب عنواناً أوضح',
+    'addresses_must_differ': 'مكان الانطلاق والوصول يجب أن يكونا مختلفين',
     'rate_experience': 'قيّم تجربتك',
     'how_was': 'كيف كان',
     'submit_rating': 'إرسال التقييم',
@@ -346,6 +422,7 @@ class AppStrings {
     'no_orders_filter': 'لا توجد طلبات تطابق هذا الفلتر.',
     'approved': 'مقبول',
     'blocked': 'محظور',
+    'closed': 'مغلقة',
     'verify_email': 'تحقق من بريدك الإلكتروني',
     'verify_email_body':
         'أرسلنا رابط تحقق إلى {email}. سيكمل التطبيق تلقائيًا بعد التحقق.',
@@ -364,6 +441,11 @@ class AppStrings {
     'total_earned': 'إجمالي الربح',
     'available_jobs': 'الطلبات المتاحة',
     'statistics': 'الإحصائيات',
+    'tickets': 'التذاكر',
+    'no_tickets': 'لا توجد تذاكر دعم',
+    'close_ticket': 'إغلاق التذكرة',
+    'search': 'بحث',
+    'reported_user': 'المستخدم المبلغ عنه',
   };
 
   static String translate(AppLanguage language, String key) {
