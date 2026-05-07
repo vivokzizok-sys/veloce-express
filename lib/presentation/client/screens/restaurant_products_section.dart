@@ -74,7 +74,13 @@ class _RestaurantProductsSectionState extends State<RestaurantProductsSection> {
         );
         final featured = [...products]
           ..shuffle(Random(_rotation + DateTime.now().day));
-        final topProducts = featured.take(8).toList();
+        final topProducts = products.length >= 6
+            ? featured.take(3).toList()
+            : <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+        final featuredIds = topProducts.map((doc) => doc.id).toSet();
+        final gridProducts = products
+            .where((doc) => !featuredIds.contains(doc.id))
+            .toList(growable: false);
 
         return CustomScrollView(
           slivers: [
@@ -88,7 +94,7 @@ class _RestaurantProductsSectionState extends State<RestaurantProductsSection> {
               SliverToBoxAdapter(
                 child: _FeaturedProductsRow(products: topProducts),
               ),
-            if (products.isEmpty)
+            if (gridProducts.isEmpty && topProducts.isEmpty)
               SliverFillRemaining(
                 hasScrollBody: false,
                 child: EmptyState(
@@ -102,14 +108,14 @@ class _RestaurantProductsSectionState extends State<RestaurantProductsSection> {
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 96),
                 sliver: SliverGrid(
                   delegate: SliverChildBuilderDelegate(
-                    (_, index) => _ProductCard(doc: products[index]),
-                    childCount: products.length,
+                    (_, index) => _ProductCard(doc: gridProducts[index]),
+                    childCount: gridProducts.length,
                   ),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 14,
-                    crossAxisSpacing: 14,
-                    childAspectRatio: 0.58,
+                    crossAxisCount: 3,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: 0.54,
                   ),
                 ),
               ),
@@ -272,15 +278,19 @@ class _RestaurantBannersState extends State<_RestaurantBanners> {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: FirebaseFirestore.instance
           .collection('app_banners')
-          .where('isActive', isEqualTo: true)
-          .orderBy('sortOrder')
           .limit(12)
           .snapshots(),
       builder: (context, snap) {
-        final banners = snap.data?.docs ?? const [];
+        final banners = [...snap.data?.docs ?? const []]
+          ..removeWhere((doc) => doc.data()['isActive'] == false)
+          ..sort((a, b) {
+            final left = (a.data()['sortOrder'] as num?)?.toInt() ?? 0;
+            final right = (b.data()['sortOrder'] as num?)?.toInt() ?? 0;
+            return left.compareTo(right);
+          });
         if (snap.hasError || banners.isEmpty) return const _FallbackBanner();
         return SizedBox(
-          height: 170,
+          height: 164,
           child: PageView.builder(
             controller: _controller,
             onPageChanged: (value) => _index = value % banners.length,
@@ -288,7 +298,7 @@ class _RestaurantBannersState extends State<_RestaurantBanners> {
               final data = banners[index % banners.length].data();
               final image = data['imageBase64'] as String? ?? '';
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(22),
                   child: AspectRatio(
@@ -429,7 +439,7 @@ class _FeaturedProductsRow extends StatelessWidget {
                   ),
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(8),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -487,7 +497,7 @@ class _ProductCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border(context)),
         boxShadow: [
           BoxShadow(
@@ -504,20 +514,22 @@ class _ProductCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
-                height: constraints.maxHeight * 0.62,
+                height: constraints.maxHeight * 0.56,
                 width: double.infinity,
                 child: _ProductImage(image: image),
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(7),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         name,
-                        style: AppTextStyles.bodyMedium,
-                        maxLines: 1,
+                        style: AppTextStyles.captionMedium.copyWith(
+                          color: AppColors.textPrimary(context),
+                        ),
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
@@ -525,6 +537,7 @@ class _ProductCard extends StatelessWidget {
                         restaurant,
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.textSecondary(context),
+                          fontSize: 11,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -535,14 +548,15 @@ class _ProductCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               '${price.toStringAsFixed(0)} DA',
-                              style: AppTextStyles.bodyMedium.copyWith(
+                              style: AppTextStyles.captionMedium.copyWith(
                                 color: AppColors.accent,
+                                fontSize: 12,
                               ),
                             ),
                           ),
                           SizedBox(
-                            width: 40,
-                            height: 40,
+                            width: 34,
+                            height: 34,
                             child: FilledButton(
                               onPressed: () =>
                                   _showRestaurantOrderSheet(context, doc),
@@ -552,7 +566,7 @@ class _ProductCard extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              child: const Icon(Icons.add_rounded),
+                              child: const Icon(Icons.add_rounded, size: 18),
                             ),
                           ),
                         ],
