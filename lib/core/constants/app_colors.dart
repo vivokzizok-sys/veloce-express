@@ -6,8 +6,11 @@ class AppColors {
   static const Color white = Color(0xFFFFFFFF);
   static const Color black = Color(0xFF111111);
   static const Color background = Color(0xFFF7F8FA);
-  static const Color accent = Color(0xFF007AFF);
-  static const Color accentLight = Color(0xFFE8F2FF);
+  static const Color accent = Color(0xFFE0312A);
+  static const Color accentLight = Color(0xFFFFECEA);
+  static const Color brandRed = Color(0xFFE0312A);
+  static const Color brandGreen = Color(0xFF75D34E);
+  static const Color brandYellow = Color(0xFFFFD957);
 
   static const Color grey50 = Color(0xFFF5F6F8);
   static const Color grey100 = Color(0xFFE9EBEF);
@@ -46,4 +49,11 @@ class AppColors {
 
   static Color textSecondary(BuildContext context) =>
       isDark(context) ? const Color(0xFFAAB2C0) : grey500;
+
+  static Color accentSoft(BuildContext context) =>
+      isDark(context) ? const Color(0xFF351D1D) : accentLight;
+
+  static Color shadow(BuildContext context) => isDark(context)
+      ? Colors.black.withValues(alpha: 0.24)
+      : Colors.black.withValues(alpha: 0.06);
 }

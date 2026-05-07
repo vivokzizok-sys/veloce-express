@@ -94,7 +94,6 @@ class AppStrings {
     'light': 'Light',
     'dark': 'Dark',
     'language': 'Language',
-    'notification_sound': 'Notification sound',
     'english': 'English',
     'arabic': 'Arabic',
     'sign_out': 'Sign out',
@@ -350,6 +349,11 @@ class AppStrings {
     'no_banners': 'No banners',
     'add_first_banner': 'Add the first 16:9 banner for the client home.',
     'show_banner': 'Show banner',
+    'discover_restaurants': 'Discover nearby restaurants',
+    'available_products': 'Available products',
+    'fresh_restaurants': 'Fresh meals near you',
+    'fresh_restaurants_body':
+        'Browse restaurant meals and order delivery with a fixed delivery fee.',
   };
 
   static const _ar = <String, String>{
@@ -582,8 +586,6 @@ class AppStrings {
         '\u062d\u0630\u0641 \u0627\u0644\u062a\u0639\u0644\u064a\u0642',
     'image_too_large':
         '\u0627\u0644\u0635\u0648\u0631\u0629 \u0643\u0628\u064a\u0631\u0629. \u0627\u062e\u062a\u0631 \u0635\u0648\u0631\u0629 \u0623\u0635\u063a\u0631.',
-    'notification_sound':
-        '\u0635\u0648\u062a \u0627\u0644\u0625\u0634\u0639\u0627\u0631\u0627\u062a',
     'client_rejected_price':
         '\u0627\u0644\u0632\u0628\u0648\u0646 \u0631\u0641\u0636 \u0633\u0639\u0631\u0643. \u064a\u0645\u0643\u0646\u0643 \u0625\u0631\u0633\u0627\u0644 \u0633\u0639\u0631 \u062c\u062f\u064a\u062f.',
     'new_delivery_price':
@@ -680,6 +682,10 @@ class AppStrings {
     'no_banners': 'لا توجد صور',
     'add_first_banner': 'أضف أول صورة علوية بحجم 16:9 لواجهة الزبون.',
     'show_banner': 'إظهار الصورة',
+    'discover_restaurants': 'اكتشف مطاعم قريبة منك',
+    'available_products': 'المنتجات المتاحة',
+    'fresh_restaurants': 'وجبات طازجة قريبة منك',
+    'fresh_restaurants_body': 'تصفح وجبات المطاعم واطلب التوصيل بسعر ثابت.',
   };
 
   static String translate(AppLanguage language, String key) {

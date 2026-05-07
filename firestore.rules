@@ -92,10 +92,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
 
       match /menu_items/{itemId} {
-        allow read: if isAdmin()
-          || (isApproved()
-            && get(/databases/$(database)/documents/users/$(uid)).data.role == 'store'
-            && get(/databases/$(database)/documents/users/$(uid)).data.isApproved == true);
+        allow read: if isApproved();
         allow create, update, delete: if isStore()
           && request.auth.uid == uid;
       }

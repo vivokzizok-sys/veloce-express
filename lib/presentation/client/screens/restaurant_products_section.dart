@@ -35,7 +35,9 @@ class _RestaurantProductsSectionState extends State<RestaurantProductsSection> {
     _search.addListener(() => setState(() {}));
     _rotationTimer = Timer.periodic(
       const Duration(seconds: 45),
-      (_) => setState(() => _rotation++),
+      (_) {
+        if (mounted) setState(() => _rotation++);
+      },
     );
   }
 
@@ -52,14 +54,13 @@ class _RestaurantProductsSectionState extends State<RestaurantProductsSection> {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: FirebaseFirestore.instance
           .collectionGroup('menu_items')
-          .limit(100)
+          .limit(120)
           .snapshots(),
       builder: (context, snap) {
         if (snap.hasError) {
-          return EmptyState(
-            icon: Icons.error_outline_rounded,
-            title: context.t('no_menu_items'),
-            subtitle: context.t('products_load_error'),
+          return _LoadFailure(
+            message: context.t('products_load_error'),
+            details: snap.error.toString(),
           );
         }
         if (!snap.hasData) {
@@ -77,24 +78,10 @@ class _RestaurantProductsSectionState extends State<RestaurantProductsSection> {
 
         return CustomScrollView(
           slivers: [
-            const SliverToBoxAdapter(child: _RestaurantBanners()),
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
-                child: TextField(
-                  controller: _search,
-                  decoration: InputDecoration(
-                    hintText: context.t('search_food_or_restaurant'),
-                    prefixIcon: const Icon(Icons.search_rounded),
-                    suffixIcon: _search.text.isEmpty
-                        ? null
-                        : IconButton(
-                            tooltip: context.t('cancel'),
-                            icon: const Icon(Icons.close_rounded),
-                            onPressed: _search.clear,
-                          ),
-                  ),
-                ),
+              child: _MarketplaceHeader(
+                search: _search,
+                productsCount: products.length,
               ),
             ),
             if (topProducts.isNotEmpty)
@@ -112,7 +99,7 @@ class _RestaurantProductsSectionState extends State<RestaurantProductsSection> {
               )
             else
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 96),
                 sliver: SliverGrid(
                   delegate: SliverChildBuilderDelegate(
                     (_, index) => _ProductCard(doc: products[index]),
@@ -120,9 +107,9 @@ class _RestaurantProductsSectionState extends State<RestaurantProductsSection> {
                   ),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 0.64,
+                    mainAxisSpacing: 14,
+                    crossAxisSpacing: 14,
+                    childAspectRatio: 0.58,
                   ),
                 ),
               ),
@@ -164,6 +151,90 @@ class _RestaurantProductsSectionState extends State<RestaurantProductsSection> {
   }
 }
 
+class _MarketplaceHeader extends StatelessWidget {
+  final TextEditingController search;
+  final int productsCount;
+
+  const _MarketplaceHeader({
+    required this.search,
+    required this.productsCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface(context),
+        border: Border(bottom: BorderSide(color: AppColors.border(context))),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.t('restaurant_products'),
+                        style: AppTextStyles.title2.copyWith(
+                          color: AppColors.textPrimary(context),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        productsCount == 0
+                            ? context.t('discover_restaurants')
+                            : '${context.t('available_products')}: $productsCount',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textSecondary(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.accentSoft(context),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.restaurant_menu_rounded,
+                    color: AppColors.accent,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const _RestaurantBanners(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+            child: TextField(
+              controller: search,
+              decoration: InputDecoration(
+                hintText: context.t('search_food_or_restaurant'),
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: search.text.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: context.t('cancel'),
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: search.clear,
+                      ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _RestaurantBanners extends StatefulWidget {
   const _RestaurantBanners();
 
@@ -172,7 +243,7 @@ class _RestaurantBanners extends StatefulWidget {
 }
 
 class _RestaurantBannersState extends State<_RestaurantBanners> {
-  final _controller = PageController(viewportFraction: 0.9);
+  final _controller = PageController(viewportFraction: 0.92);
   Timer? _timer;
   int _index = 0;
 
@@ -180,10 +251,9 @@ class _RestaurantBannersState extends State<_RestaurantBanners> {
   void initState() {
     super.initState();
     _timer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (!_controller.hasClients) return;
-      final next = _index + 1;
+      if (!_controller.hasClients || !mounted) return;
       _controller.animateToPage(
-        next,
+        _index + 1,
         duration: const Duration(milliseconds: 420),
         curve: Curves.easeOutCubic,
       );
@@ -208,9 +278,9 @@ class _RestaurantBannersState extends State<_RestaurantBanners> {
           .snapshots(),
       builder: (context, snap) {
         final banners = snap.data?.docs ?? const [];
-        if (banners.isEmpty) return const SizedBox(height: 8);
+        if (snap.hasError || banners.isEmpty) return const _FallbackBanner();
         return SizedBox(
-          height: 178,
+          height: 170,
           child: PageView.builder(
             controller: _controller,
             onPageChanged: (value) => _index = value % banners.length,
@@ -220,18 +290,17 @@ class _RestaurantBannersState extends State<_RestaurantBanners> {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 5),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(22),
                   child: AspectRatio(
                     aspectRatio: 16 / 9,
                     child: image.isEmpty
-                        ? Container(color: AppColors.surfaceAlt(context))
+                        ? const _FallbackBanner(inCarousel: true)
                         : Image.memory(
                             base64Decode(image),
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: AppColors.surfaceAlt(context),
-                              child: const Icon(Icons.broken_image_outlined),
-                            ),
+                            filterQuality: FilterQuality.medium,
+                            errorBuilder: (_, __, ___) =>
+                                const _FallbackBanner(inCarousel: true),
                           ),
                   ),
                 ),
@@ -240,6 +309,83 @@ class _RestaurantBannersState extends State<_RestaurantBanners> {
           ),
         );
       },
+    );
+  }
+}
+
+class _FallbackBanner extends StatelessWidget {
+  final bool inCarousel;
+
+  const _FallbackBanner({this.inCarousel = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final banner = Container(
+      height: 154,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.brandRed,
+        borderRadius: BorderRadius.circular(inCarousel ? 0 : 22),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          PositionedDirectional(
+            end: -28,
+            bottom: -26,
+            child: Container(
+              width: 132,
+              height: 132,
+              decoration: BoxDecoration(
+                color: AppColors.brandYellow.withValues(alpha: 0.34),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          PositionedDirectional(
+            start: -18,
+            top: -18,
+            child: Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                color: AppColors.brandGreen.withValues(alpha: 0.24),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  context.t('fresh_restaurants'),
+                  style: AppTextStyles.title2.copyWith(color: AppColors.white),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: 230,
+                  child: Text(
+                    context.t('fresh_restaurants_body'),
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.white.withValues(alpha: 0.86),
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+    if (inCarousel) return banner;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: banner,
     );
   }
 }
@@ -254,7 +400,7 @@ class _FeaturedProductsRow extends StatelessWidget {
     return SizedBox(
       height: 126,
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
         scrollDirection: Axis.horizontal,
         itemCount: products.length,
         separatorBuilder: (_, __) => const SizedBox(width: 10),
@@ -267,7 +413,7 @@ class _FeaturedProductsRow extends StatelessWidget {
             onTap: () => _showRestaurantOrderSheet(context, doc),
             borderRadius: BorderRadius.circular(16),
             child: Container(
-              width: 236,
+              width: 252,
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 color: AppColors.surface(context),
@@ -277,7 +423,7 @@ class _FeaturedProductsRow extends StatelessWidget {
               child: Row(
                 children: [
                   SizedBox(
-                    width: 104,
+                    width: 114,
                     height: double.infinity,
                     child: _ProductImage(image: image),
                   ),
@@ -307,7 +453,9 @@ class _FeaturedProductsRow extends StatelessWidget {
                           const SizedBox(height: 8),
                           Text(
                             '${price.toStringAsFixed(0)} DA',
-                            style: AppTextStyles.captionMedium,
+                            style: AppTextStyles.captionMedium.copyWith(
+                              color: AppColors.accent,
+                            ),
                           ),
                         ],
                       ),
@@ -341,6 +489,13 @@ class _ProductCard extends StatelessWidget {
         color: AppColors.surface(context),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border(context)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow(context),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       clipBehavior: Clip.antiAlias,
       child: LayoutBuilder(
@@ -349,7 +504,7 @@ class _ProductCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
-                height: constraints.maxHeight * 0.55,
+                height: constraints.maxHeight * 0.62,
                 width: double.infinity,
                 child: _ProductImage(image: image),
               ),
@@ -375,18 +530,32 @@ class _ProductCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const Spacer(),
-                      Text(
-                        '${price.toStringAsFixed(0)} DA',
-                        style: AppTextStyles.captionMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                          onPressed: () =>
-                              _showRestaurantOrderSheet(context, doc),
-                          child: Text(context.t('order_now')),
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${price.toStringAsFixed(0)} DA',
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.accent,
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: FilledButton(
+                              onPressed: () =>
+                                  _showRestaurantOrderSheet(context, doc),
+                              style: FilledButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Icon(Icons.add_rounded),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -410,7 +579,10 @@ class _ProductImage extends StatelessWidget {
     if (image == null || image!.isEmpty) {
       return Container(
         color: AppColors.surfaceAlt(context),
-        child: const Icon(Icons.fastfood_outlined),
+        child: Icon(
+          Icons.fastfood_outlined,
+          color: AppColors.textSecondary(context),
+        ),
       );
     }
     return Image.memory(
@@ -421,6 +593,25 @@ class _ProductImage extends StatelessWidget {
         color: AppColors.surfaceAlt(context),
         child: const Icon(Icons.broken_image_outlined),
       ),
+    );
+  }
+}
+
+class _LoadFailure extends StatelessWidget {
+  final String message;
+  final String details;
+
+  const _LoadFailure({
+    required this.message,
+    required this.details,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return EmptyState(
+      icon: Icons.error_outline_rounded,
+      title: context.t('no_menu_items'),
+      subtitle: '$message\n$details',
     );
   }
 }
@@ -705,9 +896,9 @@ String _normalize(String value) {
       .trim()
       .toLowerCase()
       .replaceAll(RegExp(r'[\u064b-\u065f]'), '')
-      .replaceAll('أ', 'ا')
-      .replaceAll('إ', 'ا')
-      .replaceAll('آ', 'ا')
-      .replaceAll('ة', 'ه')
+      .replaceAll('\u0623', '\u0627')
+      .replaceAll('\u0625', '\u0627')
+      .replaceAll('\u0622', '\u0627')
+      .replaceAll('\u0629', '\u0647')
       .replaceAll(RegExp(r'\s+'), ' ');
 }
