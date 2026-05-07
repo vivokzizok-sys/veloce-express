@@ -68,6 +68,7 @@ class UserEntity {
   final String? vehiclePhotoContentType;
   final StoreType? storeType;
   final String? storeAddress;
+  final double storeDeliveryFee;
   final bool isAvailable;
   final double rating;
   final int totalDeliveries;
@@ -89,6 +90,7 @@ class UserEntity {
     this.vehiclePhotoContentType,
     this.storeType,
     this.storeAddress,
+    this.storeDeliveryFee = 100,
     this.isAvailable = true,
     this.rating = 0,
     this.totalDeliveries = 0,
@@ -120,6 +122,7 @@ class UserEntity {
       vehiclePhotoContentType: vehiclePhotoContentType,
       storeType: storeType,
       storeAddress: storeAddress,
+      storeDeliveryFee: storeDeliveryFee,
       isAvailable: isAvailable,
       rating: rating,
       totalDeliveries: totalDeliveries,

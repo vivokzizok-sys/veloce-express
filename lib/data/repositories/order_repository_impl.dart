@@ -388,14 +388,28 @@ class OrderRepositoryImpl implements OrderRepository {
       'read': false,
       'createdAt': FieldValue.serverTimestamp(),
     });
-    await _sendPushQuietly(clientId, title, body);
+    await _sendPushQuietly(
+      clientId,
+      title,
+      body,
+      orderId: orderId,
+      type: type,
+    );
   }
 
-  Future<void> _sendPushQuietly(String toUserId, String title, String body) {
+  Future<void> _sendPushQuietly(
+    String toUserId,
+    String title,
+    String body, {
+    String? orderId,
+    String? type,
+  }) {
     return PushNotificationSender.send(
       toUserId: toUserId,
       title: title,
       body: body,
+      orderId: orderId,
+      type: type,
     ).catchError((_) {});
   }
 }

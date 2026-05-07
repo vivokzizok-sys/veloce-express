@@ -16,6 +16,7 @@ import '../../../domain/entities/user_entity.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../shared/widgets/app_menu_button.dart';
 import '../../shared/widgets/shared_widgets.dart';
+import '../../shared/widgets/subscription_gate.dart';
 
 class StoreHomeScreen extends StatelessWidget {
   const StoreHomeScreen({super.key});
@@ -23,30 +24,35 @@ class StoreHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = (context.read<AuthBloc>().state as AuthAuthenticated).user;
-    return Scaffold(
-      backgroundColor: AppColors.page(context),
-      appBar: AppBar(
-        title: Text(context.t('restaurant_dashboard')),
-        actions: [AppMenuButton(user: user)],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showMenuItemSheet(context, user),
-        icon: const Icon(Icons.add_rounded),
-        label: Text(context.t('add_menu_item')),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-        children: [
-          _StoreHeader(userName: user.fullName, phone: user.phoneNumber),
-          const SizedBox(height: 16),
-          Text(context.t('menu_items'), style: AppTextStyles.title3),
-          const SizedBox(height: 8),
-          _MenuItemsList(storeId: user.uid),
-          const SizedBox(height: 20),
-          Text(context.t('store_orders'), style: AppTextStyles.title3),
-          const SizedBox(height: 8),
-          _StoreOrdersList(storeId: user.uid),
-        ],
+    return SubscriptionGate(
+      user: user,
+      child: Scaffold(
+        backgroundColor: AppColors.page(context),
+        appBar: AppBar(
+          title: Text(context.t('restaurant_dashboard')),
+          actions: [AppMenuButton(user: user)],
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => _showMenuItemSheet(context, user),
+          icon: const Icon(Icons.add_rounded),
+          label: Text(context.t('add_menu_item')),
+        ),
+        body: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+          children: [
+            _StoreHeader(userName: user.fullName, phone: user.phoneNumber),
+            const SizedBox(height: 12),
+            _StoreDeliveryFeeCard(store: user),
+            const SizedBox(height: 16),
+            Text(context.t('menu_items'), style: AppTextStyles.title3),
+            const SizedBox(height: 8),
+            _MenuItemsList(storeId: user.uid),
+            const SizedBox(height: 20),
+            Text(context.t('store_orders'), style: AppTextStyles.title3),
+            const SizedBox(height: 8),
+            _StoreOrdersList(storeId: user.uid),
+          ],
+        ),
       ),
     );
   }
@@ -124,6 +130,13 @@ class _MenuItemSheetState extends State<_MenuItemSheet> {
     }
     setState(() => _loading = true);
     try {
+      final storeSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.store.uid)
+          .get();
+      final storeDeliveryFee =
+          (storeSnapshot.data()?['storeDeliveryFee'] as num?)?.toDouble() ??
+              widget.store.storeDeliveryFee;
       await FirebaseFirestore.instance
           .collection('users')
           .doc(widget.store.uid)
@@ -140,6 +153,7 @@ class _MenuItemSheetState extends State<_MenuItemSheet> {
         'storeAddress': widget.store.storeAddress,
         'storeWilaya': widget.store.wilaya,
         'storeCommune': widget.store.commune,
+        'storeDeliveryFee': storeDeliveryFee,
         'searchKeywords': _buildSearchKeywords(
           name: _name.text.trim(),
           restaurant: widget.store.fullName,
@@ -262,6 +276,97 @@ class _StoreHeader extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StoreDeliveryFeeCard extends StatefulWidget {
+  final UserEntity store;
+
+  const _StoreDeliveryFeeCard({required this.store});
+
+  @override
+  State<_StoreDeliveryFeeCard> createState() => _StoreDeliveryFeeCardState();
+}
+
+class _StoreDeliveryFeeCardState extends State<_StoreDeliveryFeeCard> {
+  late final TextEditingController _fee;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fee = TextEditingController(
+      text: widget.store.storeDeliveryFee.toStringAsFixed(0),
+    );
+  }
+
+  @override
+  void dispose() {
+    _fee.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final value = double.tryParse(_fee.text.trim());
+    if (value == null || value < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.t('write_clear_value'))),
+      );
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.store.uid)
+          .update({
+        'storeDeliveryFee': value,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.t('delivery_fee_saved'))),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface(context),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border(context)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: AppTextField(
+              controller: _fee,
+              hint: context.t('store_delivery_fee'),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              prefixIcon: const Center(widthFactor: 1.4, child: Text('DA')),
+            ),
+          ),
+          const SizedBox(width: 10),
+          FilledButton(
+            onPressed: _saving ? null : _save,
+            child: _saving
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(context.t('save_changes')),
           ),
         ],
       ),
@@ -545,8 +650,20 @@ class _DriverSelectionSheet extends StatelessWidget {
       child: SizedBox(
         height: MediaQuery.sizeOf(context).height * 0.72,
         child: FutureBuilder<_DriverAvailabilityData>(
-          future: _loadDrivers(),
+          future: _loadDrivers(order.storeId),
           builder: (context, snap) {
+            if (snap.hasError) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: EmptyState(
+                    icon: Icons.error_outline_rounded,
+                    title: context.t('no_drivers'),
+                    subtitle: snap.error.toString(),
+                  ),
+                ),
+              );
+            }
             if (!snap.hasData) {
               return const Center(child: CircularProgressIndicator());
             }
@@ -577,20 +694,29 @@ class _DriverSelectionSheet extends StatelessWidget {
     );
   }
 
-  Future<_DriverAvailabilityData> _loadDrivers() async {
+  Future<_DriverAvailabilityData> _loadDrivers(String? storeId) async {
     final db = FirebaseFirestore.instance;
     final driverSnap = await db
         .collection('users')
         .where('role', isEqualTo: 'driver')
         .where('isApproved', isEqualTo: true)
         .get();
-    final busySnap = await db
-        .collection('orders')
-        .where('status', whereIn: ['accepted', 'inProgress']).get();
-    final busyIds = busySnap.docs
-        .map((doc) => doc.data()['driverId'] as String?)
-        .whereType<String>()
-        .toSet();
+    var busyIds = <String>{};
+    try {
+      var query = db
+          .collection('orders')
+          .where('status', whereIn: ['accepted', 'inProgress']);
+      if (storeId != null && storeId.isNotEmpty) {
+        query = query.where('storeId', isEqualTo: storeId);
+      }
+      final busySnap = await query.get();
+      busyIds = busySnap.docs
+          .map((doc) => doc.data()['driverId'] as String?)
+          .whereType<String>()
+          .toSet();
+    } on FirebaseException {
+      busyIds = <String>{};
+    }
     return _DriverAvailabilityData(driverSnap.docs, busyIds);
   }
 
@@ -607,7 +733,7 @@ class _DriverSelectionSheet extends StatelessWidget {
     await db.collection('orders').doc(order.orderId).update({
       'status': 'accepted',
       'driverId': driver.id,
-      'acceptedBidAmount': 100,
+      'acceptedBidAmount': order.deliveryFee,
       'acceptedAt': FieldValue.serverTimestamp(),
       'assignedByStoreAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -627,6 +753,8 @@ class _DriverSelectionSheet extends StatelessWidget {
       toUserId: driver.id,
       title: pushTitle,
       body: pushBody,
+      orderId: order.orderId,
+      type: 'store_delivery_assigned',
     ).catchError((_) {});
     if (context.mounted) Navigator.pop(context);
   }

@@ -8,7 +8,7 @@ exports.sendNotification = onCall(async (request) => {
     throw new HttpsError("unauthenticated", "Authentication required");
   }
 
-  const {toUserId, title, body} = request.data || {};
+  const {toUserId, title, body, orderId, type} = request.data || {};
   if (typeof toUserId !== "string" || toUserId.trim() === "") {
     throw new HttpsError("invalid-argument", "toUserId is required");
   }
@@ -55,6 +55,12 @@ exports.sendNotification = onCall(async (request) => {
       data: {
         title: title.trim(),
         body: body.trim(),
+        ...(typeof orderId === "string" && orderId.trim() !== ""
+          ? {orderId: orderId.trim()}
+          : {}),
+        ...(typeof type === "string" && type.trim() !== ""
+          ? {type: type.trim()}
+          : {}),
       },
     });
 

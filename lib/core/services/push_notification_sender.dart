@@ -7,6 +7,8 @@ class PushNotificationSender {
     required String toUserId,
     required String title,
     required String body,
+    String? orderId,
+    String? type,
   }) async {
     final callable = FirebaseFunctions.instance.httpsCallable(
       'sendNotification',
@@ -16,6 +18,8 @@ class PushNotificationSender {
       'toUserId': toUserId,
       'title': title,
       'body': body,
+      if (orderId != null) 'orderId': orderId,
+      if (type != null) 'type': type,
     });
   }
 }

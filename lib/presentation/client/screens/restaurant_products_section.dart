@@ -87,7 +87,6 @@ class _RestaurantProductsSectionState extends State<RestaurantProductsSection> {
             SliverToBoxAdapter(
               child: _MarketplaceHeader(
                 search: _search,
-                productsCount: products.length,
               ),
             ),
             if (topProducts.isNotEmpty)
@@ -159,66 +158,20 @@ class _RestaurantProductsSectionState extends State<RestaurantProductsSection> {
 
 class _MarketplaceHeader extends StatelessWidget {
   final TextEditingController search;
-  final int productsCount;
 
   const _MarketplaceHeader({
     required this.search,
-    required this.productsCount,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface(context),
-        border: Border(bottom: BorderSide(color: AppColors.border(context))),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.t('restaurant_products'),
-                        style: AppTextStyles.title2.copyWith(
-                          color: AppColors.textPrimary(context),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        productsCount == 0
-                            ? context.t('discover_restaurants')
-                            : '${context.t('available_products')}: $productsCount',
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.textSecondary(context),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.accentSoft(context),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(
-                    Icons.restaurant_menu_rounded,
-                    color: AppColors.accent,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+          child: SizedBox(
+            height: 48,
             child: TextField(
               controller: search,
               decoration: InputDecoration(
@@ -234,9 +187,9 @@ class _MarketplaceHeader extends StatelessWidget {
               ),
             ),
           ),
-          const _RestaurantBanners(),
-        ],
-      ),
+        ),
+        const _RestaurantBanners(),
+      ],
     );
   }
 }
@@ -295,25 +248,54 @@ class _RestaurantBannersState extends State<_RestaurantBanners> {
         if (snap.hasError || banners.isEmpty) return const SizedBox.shrink();
         return SizedBox(
           height: bannerHeight,
-          child: PageView.builder(
-            controller: _controller,
-            onPageChanged: (value) => _index = value % banners.length,
-            itemBuilder: (context, index) {
-              final data = banners[index % banners.length].data();
-              final image = data['imageBase64'] as String? ?? '';
-              return AspectRatio(
-                aspectRatio: 16 / 9,
-                child: image.isEmpty
-                    ? Container(color: AppColors.surfaceAlt(context))
-                    : Image.memory(
-                        base64Decode(image),
-                        fit: BoxFit.cover,
-                        filterQuality: FilterQuality.medium,
-                        errorBuilder: (_, __, ___) =>
-                            Container(color: AppColors.surfaceAlt(context)),
-                      ),
-              );
-            },
+          child: Stack(
+            children: [
+              PageView.builder(
+                controller: _controller,
+                onPageChanged: (value) =>
+                    setState(() => _index = value % banners.length),
+                itemBuilder: (context, index) {
+                  final data = banners[index % banners.length].data();
+                  final image = data['imageBase64'] as String? ?? '';
+                  return AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: image.isEmpty
+                        ? Container(color: AppColors.surfaceAlt(context))
+                        : Image.memory(
+                            base64Decode(image),
+                            fit: BoxFit.cover,
+                            filterQuality: FilterQuality.medium,
+                            errorBuilder: (_, __, ___) =>
+                                Container(color: AppColors.surfaceAlt(context)),
+                          ),
+                  );
+                },
+              ),
+              if (banners.length > 1)
+                PositionedDirectional(
+                  bottom: 12,
+                  start: 0,
+                  end: 0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(banners.length, (index) {
+                      final active = index == _index;
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 220),
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        width: active ? 18 : 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          color: active
+                              ? AppColors.white
+                              : AppColors.white.withValues(alpha: 0.55),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+            ],
           ),
         );
       },
@@ -605,8 +587,11 @@ class _RestaurantOrderSheetState extends State<_RestaurantOrderSheet> {
     final data = widget.productDoc.data();
     final name = data['name'] as String? ?? '';
     final price = (data['price'] as num?)?.toDouble() ?? 0;
+    final deliveryFee = (data['deliveryFee'] as num?)?.toDouble() ??
+        (data['storeDeliveryFee'] as num?)?.toDouble() ??
+        RestaurantProductsSection.deliveryFee;
     final productsTotal = price * _quantity;
-    final total = productsTotal + RestaurantProductsSection.deliveryFee;
+    final total = productsTotal + deliveryFee;
 
     return SafeArea(
       child: Padding(
@@ -625,7 +610,7 @@ class _RestaurantOrderSheetState extends State<_RestaurantOrderSheet> {
                 Text(name, style: AppTextStyles.title2),
                 const SizedBox(height: 4),
                 Text(
-                  '${context.t('delivery_fee')}: ${RestaurantProductsSection.deliveryFee.toStringAsFixed(0)} DA',
+                  '${context.t('delivery_fee')}: ${deliveryFee.toStringAsFixed(0)} DA',
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.textSecondary(context),
                   ),
@@ -700,7 +685,7 @@ class _RestaurantOrderSheetState extends State<_RestaurantOrderSheet> {
                       const SizedBox(height: 6),
                       _TotalRow(
                         label: context.t('delivery_fee'),
-                        value: RestaurantProductsSection.deliveryFee,
+                        value: deliveryFee,
                       ),
                       const Divider(height: 18),
                       _TotalRow(
@@ -715,7 +700,10 @@ class _RestaurantOrderSheetState extends State<_RestaurantOrderSheet> {
                 PrimaryButton(
                   label: context.t('send_store_order'),
                   isLoading: _loading,
-                  onPressed: () => _submit(productsTotal: productsTotal),
+                  onPressed: () => _submit(
+                    productsTotal: productsTotal,
+                    deliveryFee: deliveryFee,
+                  ),
                 ),
               ],
             ),
@@ -725,7 +713,10 @@ class _RestaurantOrderSheetState extends State<_RestaurantOrderSheet> {
     );
   }
 
-  Future<void> _submit({required double productsTotal}) async {
+  Future<void> _submit({
+    required double productsTotal,
+    required double deliveryFee,
+  }) async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
@@ -736,7 +727,7 @@ class _RestaurantOrderSheetState extends State<_RestaurantOrderSheet> {
       final notificationRef =
           FirebaseFirestore.instance.collection('notifications').doc();
       final price = (product['price'] as num?)?.toDouble() ?? 0;
-      final total = productsTotal + RestaurantProductsSection.deliveryFee;
+      final total = productsTotal + deliveryFee;
       final storeId =
           product['storeId'] as String? ?? productRef.parent.parent?.id;
       if (storeId == null) return;
@@ -759,7 +750,7 @@ class _RestaurantOrderSheetState extends State<_RestaurantOrderSheet> {
         'storeItemName': product['name'],
         'storeItemPrice': price,
         'quantity': _quantity,
-        'deliveryFee': RestaurantProductsSection.deliveryFee,
+        'deliveryFee': deliveryFee,
         'productsTotal': productsTotal,
         'totalAmount': total,
         'wilaya': user.wilaya,
@@ -785,6 +776,8 @@ class _RestaurantOrderSheetState extends State<_RestaurantOrderSheet> {
         toUserId: storeId,
         title: title,
         body: body,
+        orderId: orderRef.id,
+        type: 'store_order',
       ).catchError((_) {});
 
       if (!mounted) return;

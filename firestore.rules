@@ -70,6 +70,7 @@ service cloud.firestore {
             'profilePhotoBase64',
             'storeType',
             'storeAddress',
+            'storeDeliveryFee',
             'isAvailable',
             'fcmTokens',
             'fcmTokenUpdatedAt',
@@ -242,7 +243,7 @@ service cloud.firestore {
         && resource.data.status == 'storePending'
         && request.resource.data.status == 'accepted'
         && request.resource.data.driverId is string
-        && request.resource.data.acceptedBidAmount == 100
+        && request.resource.data.acceptedBidAmount == resource.data.deliveryFee
         && request.resource.data.diff(resource.data)
           .affectedKeys()
           .hasOnly([
@@ -253,6 +254,10 @@ service cloud.firestore {
             'assignedByStoreAt',
             'updatedAt'
           ]);
+
+      allow delete: if isClient()
+        && resource.data.clientId == request.auth.uid
+        && resource.data.status in ['delivered', 'rejected', 'cancelled'];
 
       allow update, delete: if isAdmin();
 
@@ -371,6 +376,18 @@ service cloud.firestore {
     match /app_config/{configId} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    match /subscription_payments/{paymentId} {
+      allow create: if isApproved()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.role in ['driver', 'store']
+        && request.resource.data.status == 'pending'
+        && request.resource.data.receiptBase64 is string
+        && request.resource.data.receiptBase64.size() > 0;
+      allow read: if isAdmin()
+        || (isApproved() && resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin();
     }
 
     match /app_banners/{bannerId} {

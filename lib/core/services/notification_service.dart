@@ -28,15 +28,23 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _plugin;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _notificationsSub;
   StreamSubscription<RemoteMessage>? _fcmForegroundSub;
+  StreamSubscription<RemoteMessage>? _fcmOpenedSub;
   StreamSubscription<String>? _tokenRefreshSub;
   bool _initializedSnapshot = false;
   int _notificationId = 1000;
 
-  Future<void> initialize() async {
+  Future<void> initialize({
+    void Function(String? payload)? onTap,
+  }) async {
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const initSettings = InitializationSettings(android: androidInit);
 
-    await _plugin.initialize(initSettings);
+    await _plugin.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: (response) {
+        onTap?.call(response.payload);
+      },
+    );
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     await android?.createNotificationChannel(_defaultChannel);
@@ -59,6 +67,13 @@ class NotificationService {
         payload: message.data['orderId'] as String?,
       );
     });
+    _fcmOpenedSub = FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      onTap?.call(message.data['orderId'] as String?);
+    });
+    final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+    if (initialMessage != null) {
+      onTap?.call(initialMessage.data['orderId'] as String?);
+    }
   }
 
   Future<void> show({
@@ -165,6 +180,7 @@ class NotificationService {
 
   Future<void> dispose() async {
     await _fcmForegroundSub?.cancel();
+    await _fcmOpenedSub?.cancel();
     await stopWatching();
   }
 }

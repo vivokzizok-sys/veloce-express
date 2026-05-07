@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lottie/lottie.dart' as lottie;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -636,6 +635,8 @@ class _TripChatSheetState extends State<_TripChatSheet> {
         toUserId: widget.otherParty.uid,
         title: widget.me.fullName,
         body: text,
+        orderId: widget.order.orderId,
+        type: 'chat_message',
       ).catchError((_) {});
       _messageCtrl.clear();
     } finally {
@@ -876,12 +877,17 @@ class _RatingSheetState extends State<_RatingSheet>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
+          Container(
             width: 78,
             height: 78,
-            child: lottie.Lottie.asset(
-              'assets/animations/success.json',
-              repeat: false,
+            decoration: const BoxDecoration(
+              color: AppColors.success,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.check_rounded,
+              color: AppColors.white,
+              size: 44,
             ),
           ),
           const SizedBox(height: 16),

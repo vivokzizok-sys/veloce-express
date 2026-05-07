@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
@@ -8,6 +10,7 @@ import '../../../core/utils/currency.dart';
 import '../../../domain/entities/order_entity.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../order/bloc/order_bloc.dart';
+import '../../shared/widgets/shared_widgets.dart';
 
 class ClientDashboardScreen extends StatefulWidget {
   const ClientDashboardScreen({super.key});
@@ -59,9 +62,86 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                 _StatItem(context.t('total_spent'), CurrencyFormatter.da(spent),
                     Icons.payments_outlined, AppColors.driverRole),
               ]),
+              const SizedBox(height: 22),
+              Text(context.t('my_orders'), style: AppTextStyles.title2),
+              const SizedBox(height: 10),
+              if (orders.isEmpty)
+                EmptyState(
+                  icon: Icons.receipt_long_outlined,
+                  title: context.t('no_orders'),
+                  subtitle: context.t('orders_empty'),
+                )
+              else
+                ...orders.map((order) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _DashboardOrderTile(order: order),
+                    )),
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _DashboardOrderTile extends StatelessWidget {
+  final OrderEntity order;
+
+  const _DashboardOrderTile({required this.order});
+
+  @override
+  Widget build(BuildContext context) {
+    final canDelete = order.status == OrderStatus.delivered ||
+        order.status == OrderStatus.rejected ||
+        order.status == OrderStatus.cancelled;
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: () => context.go('/client/order/${order.orderId}'),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surface(context),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.border(context)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.receipt_long_outlined, color: AppColors.accent),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    order.description,
+                    style: AppTextStyles.bodyMedium,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    context.statusText(order.status.value),
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary(context),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (canDelete)
+              IconButton(
+                tooltip: context.t('delete'),
+                icon: const Icon(Icons.delete_outline_rounded),
+                color: AppColors.error,
+                onPressed: () => FirebaseFirestore.instance
+                    .collection('orders')
+                    .doc(order.orderId)
+                    .delete(),
+              )
+            else
+              const Icon(Icons.chevron_right_rounded),
+          ],
+        ),
       ),
     );
   }

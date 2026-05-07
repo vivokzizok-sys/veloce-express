@@ -77,8 +77,7 @@ class OrderDetailScreen extends StatelessWidget {
               children: [
                 _OrderSummary(order: order),
                 if (order.status == OrderStatus.accepted ||
-                    order.status == OrderStatus.inProgress ||
-                    order.status == OrderStatus.delivered) ...[
+                    order.status == OrderStatus.inProgress) ...[
                   const SizedBox(height: 12),
                   PrimaryButton(
                     label: context.t('active_trip'),

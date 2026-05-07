@@ -94,7 +94,7 @@ class _VeloceExpressAppState extends State<VeloceExpressApp> {
   }
 
   Future<void> _initNotifications() async {
-    await _notificationSvc.initialize();
+    await _notificationSvc.initialize(onTap: _handleNotificationTap);
     final current = _authBloc.state;
     if (current is AuthAuthenticated) {
       await _notificationSvc.watchUserNotifications(current.user.uid);
@@ -106,6 +106,11 @@ class _VeloceExpressAppState extends State<VeloceExpressApp> {
         await _notificationSvc.stopWatching();
       }
     });
+  }
+
+  void _handleNotificationTap(String? orderId) {
+    if (orderId == null || orderId.isEmpty) return;
+    router.go('/order/$orderId');
   }
 
   @override

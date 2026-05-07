@@ -12,6 +12,7 @@ import '../../auth/bloc/auth_bloc.dart';
 import '../../order/bloc/order_bloc.dart';
 import '../../shared/widgets/app_menu_button.dart';
 import '../../shared/widgets/shared_widgets.dart';
+import '../../shared/widgets/subscription_gate.dart';
 
 class DriverHomeScreen extends StatefulWidget {
   const DriverHomeScreen({super.key});
@@ -31,7 +32,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final user = (context.read<AuthBloc>().state as AuthAuthenticated).user;
-    return Scaffold(
+    return SubscriptionGate(
+      user: user,
+      child: Scaffold(
       backgroundColor: AppColors.page(context),
       appBar: AppBar(
         title: Text(context.t('my_delivery_requests')),
@@ -82,6 +85,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

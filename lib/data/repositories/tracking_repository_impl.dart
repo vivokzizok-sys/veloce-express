@@ -77,7 +77,13 @@ class TrackingRepositoryImpl implements TrackingRepository {
           'read': false,
           'createdAt': FieldValue.serverTimestamp(),
         });
-        await _sendPushQuietly(clientId, title, body);
+        await _sendPushQuietly(
+          clientId,
+          title,
+          body,
+          orderId: orderId,
+          type: 'delivered',
+        );
       }
       return const Right(null);
     } on FirebaseException catch (e) {
@@ -187,11 +193,19 @@ class TrackingRepositoryImpl implements TrackingRepository {
     }
   }
 
-  Future<void> _sendPushQuietly(String toUserId, String title, String body) {
+  Future<void> _sendPushQuietly(
+    String toUserId,
+    String title,
+    String body, {
+    String? orderId,
+    String? type,
+  }) {
     return PushNotificationSender.send(
       toUserId: toUserId,
       title: title,
       body: body,
+      orderId: orderId,
+      type: type,
     ).catchError((_) {});
   }
 }

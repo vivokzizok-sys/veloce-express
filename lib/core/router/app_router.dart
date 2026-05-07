@@ -48,6 +48,7 @@ class AppRoutes {
   static const storeOrder = '/client/store-order';
   static const createOrder = '/client/create-order';
   static const orderDetail = '/client/order/:orderId';
+  static const notificationOrderDetail = '/order/:orderId';
 
   static const driverHome = '/driver/home';
   static const driverDashboard = '/driver/dashboard';
@@ -229,6 +230,11 @@ class AppRouter {
         ),
         GoRoute(
           path: AppRoutes.orderDetail,
+          builder: (_, state) =>
+              OrderDetailScreen(orderId: state.pathParameters['orderId']!),
+        ),
+        GoRoute(
+          path: AppRoutes.notificationOrderDetail,
           builder: (_, state) =>
               OrderDetailScreen(orderId: state.pathParameters['orderId']!),
         ),

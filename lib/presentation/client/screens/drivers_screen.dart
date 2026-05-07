@@ -108,7 +108,7 @@ class _DriverCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    '${context.t('rating')} ${driver.rating.toStringAsFixed(1)} · ${driver.totalDeliveries} ${context.t('trips_label')}',
+                    '${context.t('rating')} ${driver.rating.toStringAsFixed(1)}',
                     style: AppTextStyles.caption,
                   ),
                 ],

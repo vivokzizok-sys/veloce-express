@@ -29,7 +29,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 5, vsync: this);
+    _tabCtrl = TabController(length: 6, vsync: this);
   }
 
   @override
@@ -79,6 +79,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             Tab(text: context.t('users')),
             Tab(text: context.t('tickets')),
             Tab(text: context.t('banners')),
+            Tab(text: context.t('payments')),
           ],
         ),
       ),
@@ -90,6 +91,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           _UsersTab(db: _db),
           _TicketsTab(db: _db),
           _BannersTab(db: _db),
+          _PaymentsTab(db: _db),
         ],
       ),
     );
@@ -1289,6 +1291,275 @@ class _BannersTab extends StatefulWidget {
 
   @override
   State<_BannersTab> createState() => _BannersTabState();
+}
+
+class _PaymentsTab extends StatelessWidget {
+  final FirebaseFirestore db;
+
+  const _PaymentsTab({required this.db});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: db
+          .collection('subscription_payments')
+          .orderBy('createdAt', descending: true)
+          .limit(100)
+          .snapshots(),
+      builder: (context, snap) {
+        if (!snap.hasData) {
+          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+        }
+        final docs = snap.data!.docs;
+        return ListView.separated(
+          padding: const EdgeInsets.all(16),
+          itemCount: docs.length + 1,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (_, index) {
+            if (index == 0) {
+              return _PaymentConfigCard(db: db, empty: docs.isEmpty);
+            }
+            return _PaymentCard(db: db, doc: docs[index - 1]);
+          },
+        );
+      },
+    );
+  }
+}
+
+class _PaymentConfigCard extends StatefulWidget {
+  final FirebaseFirestore db;
+  final bool empty;
+
+  const _PaymentConfigCard({required this.db, required this.empty});
+
+  @override
+  State<_PaymentConfigCard> createState() => _PaymentConfigCardState();
+}
+
+class _PaymentConfigCardState extends State<_PaymentConfigCard> {
+  final _baridiMob = TextEditingController();
+  final _fee = TextEditingController(text: '1500');
+  bool _loaded = false;
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _baridiMob.dispose();
+    _fee.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final fee = double.tryParse(_fee.text.trim());
+    if (_baridiMob.text.trim().isEmpty || fee == null || fee <= 0) return;
+    setState(() => _saving = true);
+    try {
+      await widget.db.collection('app_config').doc('subscription').set({
+        'baridiMobNumber': _baridiMob.text.trim(),
+        'monthlyFee': fee,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream:
+          widget.db.collection('app_config').doc('subscription').snapshots(),
+      builder: (context, snap) {
+        final data = snap.data?.data();
+        if (!_loaded && data != null) {
+          _baridiMob.text = data['baridiMobNumber'] as String? ?? '';
+          _fee.text = ((data['monthlyFee'] as num?)?.toDouble() ?? 1500)
+              .toStringAsFixed(0);
+          _loaded = true;
+        }
+        return Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.surface(context),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.border(context)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(context.t('subscription_settings'),
+                      style: AppTextStyles.title3),
+                  const SizedBox(height: 12),
+                  AppTextField(
+                    controller: _baridiMob,
+                    hint: context.t('baridimob_number'),
+                    keyboardType: TextInputType.phone,
+                  ),
+                  const SizedBox(height: 10),
+                  AppTextField(
+                    controller: _fee,
+                    hint: context.t('monthly_fee'),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    prefixIcon:
+                        const Center(widthFactor: 1.4, child: Text('DA')),
+                  ),
+                  const SizedBox(height: 12),
+                  PrimaryButton(
+                    label: context.t('save_changes'),
+                    isLoading: _saving,
+                    onPressed: _save,
+                  ),
+                ],
+              ),
+            ),
+            if (widget.empty) ...[
+              const SizedBox(height: 18),
+              _EmptyAdminState(
+                icon: Icons.payments_outlined,
+                color: AppColors.accent,
+                title: context.t('no_payments'),
+                subtitle: context.t('no_payments_body'),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _PaymentCard extends StatefulWidget {
+  final FirebaseFirestore db;
+  final QueryDocumentSnapshot<Map<String, dynamic>> doc;
+
+  const _PaymentCard({required this.db, required this.doc});
+
+  @override
+  State<_PaymentCard> createState() => _PaymentCardState();
+}
+
+class _PaymentCardState extends State<_PaymentCard> {
+  bool _loading = false;
+
+  Future<void> _approve() async {
+    setState(() => _loading = true);
+    try {
+      final data = widget.doc.data();
+      final userId = data['userId'] as String?;
+      if (userId == null) return;
+      final validUntil = DateTime.now().add(const Duration(days: 31));
+      final batch = widget.db.batch();
+      batch.update(widget.doc.reference, {
+        'status': 'approved',
+        'approvedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      batch.update(widget.db.collection('users').doc(userId), {
+        'subscriptionStatus': 'active',
+        'subscriptionValidUntil': Timestamp.fromDate(validUntil),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      await batch.commit();
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _reject() async {
+    setState(() => _loading = true);
+    try {
+      await widget.doc.reference.update({
+        'status': 'rejected',
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final data = widget.doc.data();
+    final status = data['status'] as String? ?? 'pending';
+    final receipt = data['receiptBase64'] as String?;
+    final amount = (data['amount'] as num?)?.toDouble() ?? 0;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface(context),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  data['fullName'] as String? ?? context.t('unknown'),
+                  style: AppTextStyles.bodyMedium,
+                ),
+              ),
+              StatusChip(
+                label: status,
+                color: status == 'approved'
+                    ? AppColors.success
+                    : status == 'rejected'
+                        ? AppColors.error
+                        : AppColors.warning,
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text('${data['role'] ?? ''} - ${data['phoneNumber'] ?? ''}'),
+          Text('${context.t('total')}: ${amount.toStringAsFixed(0)} DA'),
+          const SizedBox(height: 10),
+          if (receipt != null && receipt.isNotEmpty)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.memory(
+                base64Decode(receipt),
+                height: 190,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  height: 190,
+                  color: AppColors.surfaceAlt(context),
+                  child: const Icon(Icons.broken_image_outlined),
+                ),
+              ),
+            ),
+          if (status == 'pending') ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _loading ? null : _reject,
+                    icon: const Icon(Icons.close_rounded),
+                    label: Text(context.t('reject')),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: _loading ? null : _approve,
+                    icon: const Icon(Icons.check_rounded),
+                    label: Text(context.t('approve')),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }
 
 class _BannersTabState extends State<_BannersTab> {

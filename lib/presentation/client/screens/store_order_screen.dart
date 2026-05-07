@@ -42,7 +42,7 @@ class _StoreOrderScreenState extends State<StoreOrderScreen> {
     final itemName = widget.item['name'] as String? ?? '';
     final itemPrice = (widget.item['price'] as num?)?.toDouble() ?? 0;
     final productsTotal = itemPrice * _quantity;
-    const deliveryFee = 100.0;
+    final deliveryFee = widget.store.storeDeliveryFee;
     final total = productsTotal + deliveryFee;
     return BlocConsumer<OrderBloc, OrderState>(
       listener: (context, state) {
