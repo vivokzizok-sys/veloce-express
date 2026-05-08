@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -29,8 +30,8 @@ class StoreHomeScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: AppColors.page(context),
         appBar: AppBar(
-          title: Text(context.t('restaurant_dashboard')),
-          actions: [AppMenuButton(user: user)],
+          title: const Text('فيلوتشي إكسبرس'),
+          leading: AppMenuButton(user: user),
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => _showMenuItemSheet(context, user),
@@ -53,6 +54,7 @@ class StoreHomeScreen extends StatelessWidget {
             _StoreOrdersList(storeId: user.uid),
           ],
         ),
+        bottomNavigationBar: const _StoreBottomBar(),
       ),
     );
   }
@@ -70,6 +72,41 @@ class StoreHomeScreen extends StatelessWidget {
           child: _MenuItemSheet(store: store),
         );
       },
+    );
+  }
+}
+
+class _StoreBottomBar extends StatelessWidget {
+  const _StoreBottomBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: NavigationBar(
+          height: 72,
+          selectedIndex: 0,
+          onDestinationSelected: (index) {
+            if (index == 2) context.go('/settings');
+          },
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.receipt_long_rounded),
+              label: context.t('orders'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.restaurant_menu_rounded),
+              label: context.t('menu_items'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.person_outline_rounded),
+              label: context.t('menu'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -255,8 +292,15 @@ class _StoreHeader extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.border(context)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow(context),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -342,8 +386,15 @@ class _StoreDeliveryFeeCardState extends State<_StoreDeliveryFeeCard> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.border(context)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow(context),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Row(
         children: [

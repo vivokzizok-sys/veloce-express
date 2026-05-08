@@ -5,15 +5,17 @@ class AppColors {
 
   static const Color white = Color(0xFFFFFFFF);
   static const Color black = Color(0xFF111111);
-  static const Color background = Color(0xFFF7F8FA);
-  static const Color accent = Color(0xFFE0312A);
-  static const Color accentLight = Color(0xFFFFECEA);
-  static const Color brandRed = Color(0xFFE0312A);
+  static const Color background = Color(0xFFFFF8F7);
+  static const Color accent = Color(0xFFE31E24);
+  static const Color accentDark = Color(0xFFBA0013);
+  static const Color accentLight = Color(0xFFFFE2DE);
+  static const Color brandRed = Color(0xFFE31E24);
   static const Color brandGreen = Color(0xFF75D34E);
   static const Color brandYellow = Color(0xFFFFD957);
+  static const Color brandCyan = Color(0xFF25BFD0);
 
-  static const Color grey50 = Color(0xFFF5F6F8);
-  static const Color grey100 = Color(0xFFE9EBEF);
+  static const Color grey50 = Color(0xFFFFF0EE);
+  static const Color grey100 = Color(0xFFF7D8D4);
   static const Color grey200 = Color(0xFFD8DCE2);
   static const Color grey300 = Color(0xFFB8BEC8);
   static const Color grey400 = Color(0xFF8E95A3);
@@ -33,27 +35,27 @@ class AppColors {
       Theme.of(context).brightness == Brightness.dark;
 
   static Color page(BuildContext context) =>
-      isDark(context) ? const Color(0xFF101418) : background;
+      isDark(context) ? const Color(0xFF160F0F) : background;
 
   static Color surface(BuildContext context) =>
-      isDark(context) ? const Color(0xFF171C22) : white;
+      isDark(context) ? const Color(0xFF211717) : white;
 
   static Color surfaceAlt(BuildContext context) =>
-      isDark(context) ? const Color(0xFF202630) : grey50;
+      isDark(context) ? const Color(0xFF2B1F1E) : grey50;
 
   static Color border(BuildContext context) =>
-      isDark(context) ? const Color(0xFF2A323D) : grey100;
+      isDark(context) ? const Color(0xFF402B29) : const Color(0xFFE7BDB8);
 
   static Color textPrimary(BuildContext context) =>
-      isDark(context) ? const Color(0xFFF5F7FA) : black;
+      isDark(context) ? const Color(0xFFFFEDEA) : const Color(0xFF291715);
 
   static Color textSecondary(BuildContext context) =>
-      isDark(context) ? const Color(0xFFAAB2C0) : grey500;
+      isDark(context) ? const Color(0xFFD8B9B5) : const Color(0xFF5D3F3C);
 
   static Color accentSoft(BuildContext context) =>
-      isDark(context) ? const Color(0xFF351D1D) : accentLight;
+      isDark(context) ? const Color(0xFF421B1D) : accentLight;
 
   static Color shadow(BuildContext context) => isDark(context)
       ? Colors.black.withValues(alpha: 0.24)
-      : Colors.black.withValues(alpha: 0.06);
+      : const Color(0xFFBA0013).withValues(alpha: 0.08);
 }

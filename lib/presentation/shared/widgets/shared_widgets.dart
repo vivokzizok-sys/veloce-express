@@ -25,7 +25,7 @@ class PrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 52,
+      height: 56,
       child: FilledButton(
         onPressed: isLoading ? null : onPressed,
         style: FilledButton.styleFrom(
@@ -34,7 +34,7 @@ class PrimaryButton extends StatelessWidget {
           disabledBackgroundColor: AppColors.grey200,
           disabledForegroundColor: AppColors.grey400,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
           ),
           textStyle: AppTextStyles.button,
         ),
@@ -148,7 +148,7 @@ class StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(AppColors.isDark(context) ? 0.18 : 0.1),
+        color: color.withValues(alpha: AppColors.isDark(context) ? 0.18 : 0.1),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(

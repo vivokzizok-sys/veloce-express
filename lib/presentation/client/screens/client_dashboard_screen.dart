@@ -31,7 +31,14 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.page(context),
-      appBar: AppBar(title: Text(context.t('client_dashboard'))),
+      appBar: AppBar(
+        leading: IconButton(
+          tooltip: context.t('back'),
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => context.go('/client/home'),
+        ),
+        title: const Text('فيلوتشي إكسبرس'),
+      ),
       body: BlocBuilder<OrderBloc, OrderState>(
         builder: (context, state) {
           final orders = state is OrdersLoaded ? state.orders : <OrderEntity>[];
@@ -50,7 +57,19 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Text(context.t('statistics'), style: AppTextStyles.title2),
+              Text(
+                context.t('client_dashboard'),
+                style: AppTextStyles.title1.copyWith(
+                  color: AppColors.textPrimary(context),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                context.t('dashboard_overview'),
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.textSecondary(context),
+                ),
+              ),
               const SizedBox(height: 14),
               _StatsGrid(items: [
                 _StatItem(context.t('total_orders'), '${orders.length}',
@@ -63,7 +82,20 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                     Icons.payments_outlined, AppColors.driverRole),
               ]),
               const SizedBox(height: 22),
-              Text(context.t('my_orders'), style: AppTextStyles.title2),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(context.t('my_orders'),
+                        style: AppTextStyles.title2),
+                  ),
+                  Text(
+                    context.t('show_all'),
+                    style: AppTextStyles.captionMedium.copyWith(
+                      color: AppColors.accentDark,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 10),
               if (orders.isEmpty)
                 EmptyState(
@@ -101,12 +133,30 @@ class _DashboardOrderTile extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppColors.surface(context),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(color: AppColors.border(context)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadow(context),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
+            ),
+          ],
         ),
         child: Row(
           children: [
-            const Icon(Icons.receipt_long_outlined, color: AppColors.accent),
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.accentLight,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.local_shipping_rounded,
+                color: AppColors.accentDark,
+              ),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -180,8 +230,15 @@ class _StatCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.border(context)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow(context),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -35,57 +35,229 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     return SubscriptionGate(
       user: user,
       child: Scaffold(
-      backgroundColor: AppColors.page(context),
-      appBar: AppBar(
-        title: Text(context.t('my_delivery_requests')),
-        actions: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: Text(
-                user.rating.toStringAsFixed(1),
-                style: AppTextStyles.captionMedium,
+        backgroundColor: AppColors.page(context),
+        appBar: AppBar(
+          title: const Text('فيلوتشي إكسبرس'),
+          leading: AppMenuButton(user: user),
+          actions: [
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 12),
+              child: Row(
+                children: [
+                  Text(
+                    user.rating.toStringAsFixed(1),
+                    style: AppTextStyles.captionMedium,
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.star_rounded,
+                    color: AppColors.brandYellow,
+                    size: 20,
+                  ),
+                ],
               ),
             ),
-          ),
-          IconButton(
-            tooltip: context.t('open_dashboard'),
-            icon: const Icon(Icons.insights_rounded),
-            onPressed: () => context.push('/driver/dashboard'),
-          ),
-          AppMenuButton(user: user),
-        ],
-      ),
-      body: Column(
-        children: [
-          _DriverActiveTripBanner(driverId: user.uid),
-          Expanded(
-            child: BlocBuilder<OrderBloc, OrderState>(
-              builder: (context, state) {
-                if (state is OrdersLoaded) {
-                  if (state.orders.isEmpty) {
-                    return EmptyState(
-                      icon: Icons.work_outline_rounded,
-                      title: context.t('no_driver_requests'),
-                      subtitle: context.t('no_driver_requests_body'),
+          ],
+        ),
+        body: Column(
+          children: [
+            _DriverStatusPanel(userId: user.uid),
+            _DriverActiveTripBanner(driverId: user.uid),
+            Expanded(
+              child: BlocBuilder<OrderBloc, OrderState>(
+                builder: (context, state) {
+                  if (state is OrdersLoaded) {
+                    if (state.orders.isEmpty) {
+                      return EmptyState(
+                        icon: Icons.work_outline_rounded,
+                        title: context.t('no_driver_requests'),
+                        subtitle: context.t('no_driver_requests_body'),
+                      );
+                    }
+                    return ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 104),
+                      itemCount: state.orders.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (_, index) =>
+                          _JobTile(order: state.orders[index]),
                     );
                   }
-                  return ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: state.orders.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (_, index) =>
-                        _JobTile(order: state.orders[index]),
+                  return const Center(
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   );
-                }
-                return const Center(
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                );
-              },
+                },
+              ),
+            ),
+          ],
+        ),
+        bottomNavigationBar: const _DriverBottomBar(),
+      ),
+    );
+  }
+}
+
+class _DriverStatusPanel extends StatelessWidget {
+  final String userId;
+
+  const _DriverStatusPanel({required this.userId});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .snapshots(),
+      builder: (context, snap) {
+        final data = snap.data?.data();
+        final available = data?['isAvailable'] as bool? ?? true;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: _MiniStatCard(
+                  icon: Icons.speed_rounded,
+                  label: context.t('driver_availability'),
+                  value: available
+                      ? context.t('available')
+                      : context.t('unavailable'),
+                  color: available ? AppColors.success : AppColors.grey500,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.surface(context),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: AppColors.border(context)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.shadow(context),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      available
+                          ? context.t('available')
+                          : context.t('unavailable'),
+                      style: AppTextStyles.captionMedium,
+                    ),
+                    const SizedBox(width: 8),
+                    Switch(
+                      value: available,
+                      activeColor: AppColors.accent,
+                      onChanged: (value) {
+                        FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(userId)
+                            .update({
+                          'isAvailable': value,
+                          'updatedAt': FieldValue.serverTimestamp(),
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _MiniStatCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  const _MiniStatCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface(context),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border(context)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow(context),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: AppTextStyles.caption),
+                Text(value,
+                    style: AppTextStyles.bodyMedium.copyWith(color: color)),
+              ],
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _DriverBottomBar extends StatelessWidget {
+  const _DriverBottomBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: NavigationBar(
+          height: 72,
+          selectedIndex: 0,
+          onDestinationSelected: (index) {
+            switch (index) {
+              case 1:
+                context.go('/driver/dashboard');
+              case 2:
+                context.go('/settings');
+            }
+          },
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.local_shipping_rounded),
+              label: context.t('orders'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.insights_rounded),
+              label: context.t('statistics'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.person_outline_rounded),
+              label: context.t('menu'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -127,10 +299,12 @@ class _DriverActiveTripBanner extends StatelessWidget {
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: AppColors.isDark(context)
-                    ? AppColors.accent.withOpacity(0.14)
+                    ? AppColors.accent.withValues(alpha: 0.14)
                     : AppColors.accentLight,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.accent.withOpacity(0.25)),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: AppColors.accent.withValues(alpha: 0.25),
+                ),
               ),
               child: Row(
                 children: [
@@ -166,13 +340,20 @@ class _JobTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () => context.go('/driver/bid/${order.orderId}'),
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppColors.surface(context),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppColors.border(context)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadow(context),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

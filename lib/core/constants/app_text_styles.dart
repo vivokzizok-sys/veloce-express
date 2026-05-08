@@ -89,17 +89,17 @@ class AppTheme {
         primary: AppColors.accent,
         surface: AppColors.white,
       ),
-      fontFamily: 'Roboto',
+      fontFamily: 'IBM Plex Sans Arabic',
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.background,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        centerTitle: false,
+        centerTitle: true,
         titleTextStyle: TextStyle(
-          fontSize: 18,
+          fontSize: 24,
           fontWeight: FontWeight.w700,
           letterSpacing: 0,
-          color: AppColors.black,
+          color: AppColors.accentDark,
         ),
         iconTheme: IconThemeData(color: AppColors.black),
       ),
@@ -109,20 +109,38 @@ class AppTheme {
           ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.grey50,
+        fillColor: AppColors.white,
         hintStyle: AppTextStyles.body.copyWith(color: AppColors.grey400),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: AppColors.accent, width: 1.4),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
       cardColor: AppColors.white,
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: AppColors.white.withValues(alpha: 0.94),
+        indicatorColor: AppColors.accentLight,
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (states) => AppTextStyles.captionMedium.copyWith(
+            color: states.contains(WidgetState.selected)
+                ? AppColors.accentDark
+                : AppColors.grey500,
+          ),
+        ),
+        iconTheme: WidgetStateProperty.resolveWith(
+          (states) => IconThemeData(
+            color: states.contains(WidgetState.selected)
+                ? AppColors.accentDark
+                : AppColors.grey500,
+          ),
+        ),
+      ),
     );
   }
 
@@ -135,7 +153,7 @@ class AppTheme {
         brightness: Brightness.dark,
         primary: AppColors.accent,
       ),
-      fontFamily: 'Roboto',
+      fontFamily: 'IBM Plex Sans Arabic',
     );
     return base.copyWith(
       scaffoldBackgroundColor: const Color(0xFF101418),
@@ -145,10 +163,10 @@ class AppTheme {
         elevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
-          fontSize: 18,
+          fontSize: 24,
           fontWeight: FontWeight.w700,
           letterSpacing: 0,
-          color: Color(0xFFF5F7FA),
+          color: AppColors.accent,
         ),
         iconTheme: IconThemeData(color: Color(0xFFF5F7FA)),
       ),
@@ -158,7 +176,7 @@ class AppTheme {
           ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF1B2026),
+        fillColor: const Color(0xFF2B1F1E),
         hintStyle: AppTextStyles.body.copyWith(color: const Color(0xFFAAB2C0)),
         prefixIconColor: const Color(0xFFAAB2C0),
         border: OutlineInputBorder(
@@ -173,6 +191,13 @@ class AppTheme {
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
       cardColor: const Color(0xFF171C22),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: const Color(0xFF211717),
+        indicatorColor: const Color(0xFF421B1D),
+        labelTextStyle: WidgetStatePropertyAll(
+          AppTextStyles.captionMedium.copyWith(color: AppColors.accentLight),
+        ),
+      ),
     );
   }
 }

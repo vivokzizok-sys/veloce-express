@@ -89,6 +89,9 @@ class _RestaurantProductsSectionState extends State<RestaurantProductsSection> {
                 search: _search,
               ),
             ),
+            SliverToBoxAdapter(
+              child: _DeliveryPerkCard(productsCount: products.length),
+            ),
             if (topProducts.isNotEmpty)
               SliverToBoxAdapter(
                 child: _FeaturedProductsRow(products: topProducts),
@@ -104,7 +107,7 @@ class _RestaurantProductsSectionState extends State<RestaurantProductsSection> {
               )
             else
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 96),
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 108),
                 sliver: SliverGrid(
                   delegate: SliverChildBuilderDelegate(
                     (_, index) => _ProductCard(doc: gridProducts[index]),
@@ -169,14 +172,16 @@ class _MarketplaceHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
           child: SizedBox(
-            height: 48,
+            height: 56,
             child: TextField(
               controller: search,
               decoration: InputDecoration(
                 hintText: context.t('search_food_or_restaurant'),
                 prefixIcon: const Icon(Icons.search_rounded),
+                suffixIconColor: AppColors.accent,
+                prefixIconColor: AppColors.textSecondary(context),
                 suffixIcon: search.text.isEmpty
                     ? null
                     : IconButton(
@@ -234,7 +239,7 @@ class _RestaurantBannersState extends State<_RestaurantBanners> {
           .limit(12)
           .snapshots(),
       builder: (context, snap) {
-        final bannerHeight = MediaQuery.sizeOf(context).width * 9 / 16;
+        final bannerHeight = (MediaQuery.sizeOf(context).width - 32) * 9 / 16;
         if (!snap.hasData && !snap.hasError) {
           return SizedBox(height: bannerHeight);
         }
@@ -246,59 +251,160 @@ class _RestaurantBannersState extends State<_RestaurantBanners> {
             return left.compareTo(right);
           });
         if (snap.hasError || banners.isEmpty) return const SizedBox.shrink();
-        return SizedBox(
-          height: bannerHeight,
-          child: Stack(
-            children: [
-              PageView.builder(
-                controller: _controller,
-                onPageChanged: (value) =>
-                    setState(() => _index = value % banners.length),
-                itemBuilder: (context, index) {
-                  final data = banners[index % banners.length].data();
-                  final image = data['imageBase64'] as String? ?? '';
-                  return AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: image.isEmpty
-                        ? Container(color: AppColors.surfaceAlt(context))
-                        : Image.memory(
-                            base64Decode(image),
-                            fit: BoxFit.cover,
-                            filterQuality: FilterQuality.medium,
-                            errorBuilder: (_, __, ___) =>
-                                Container(color: AppColors.surfaceAlt(context)),
-                          ),
-                  );
-                },
-              ),
-              if (banners.length > 1)
-                PositionedDirectional(
-                  bottom: 12,
-                  start: 0,
-                  end: 0,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(banners.length, (index) {
-                      final active = index == _index;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 220),
-                        margin: const EdgeInsets.symmetric(horizontal: 3),
-                        width: active ? 18 : 7,
-                        height: 7,
-                        decoration: BoxDecoration(
-                          color: active
-                              ? AppColors.white
-                              : AppColors.white.withValues(alpha: 0.55),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      );
-                    }),
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: SizedBox(
+            height: bannerHeight,
+            child: Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: PageView.builder(
+                    controller: _controller,
+                    onPageChanged: (value) =>
+                        setState(() => _index = value % banners.length),
+                    itemBuilder: (context, index) {
+                      final data = banners[index % banners.length].data();
+                      final image = data['imageBase64'] as String? ?? '';
+                      return image.isEmpty
+                          ? Container(color: AppColors.surfaceAlt(context))
+                          : Image.memory(
+                              base64Decode(image),
+                              fit: BoxFit.cover,
+                              filterQuality: FilterQuality.medium,
+                              errorBuilder: (_, __, ___) => Container(
+                                color: AppColors.surfaceAlt(context),
+                              ),
+                            );
+                    },
                   ),
                 ),
-            ],
+                if (banners.length > 1)
+                  PositionedDirectional(
+                    bottom: 12,
+                    start: 0,
+                    end: 0,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(banners.length, (index) {
+                        final active = index == _index;
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 220),
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          width: active ? 22 : 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: active
+                                ? AppColors.white
+                                : AppColors.white.withValues(alpha: 0.55),
+                            borderRadius: BorderRadius.circular(99),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.18),
+                                blurRadius: 10,
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+}
+
+class _DeliveryPerkCard extends StatelessWidget {
+  final int productsCount;
+
+  const _DeliveryPerkCard({required this.productsCount});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.surface(context).withValues(alpha: 0.86),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: AppColors.border(context)),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.shadow(context),
+                  blurRadius: 24,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: const BoxDecoration(
+                    color: AppColors.accentLight,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.bolt_rounded,
+                    color: AppColors.accentDark,
+                    size: 30,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.t('fast_delivery'),
+                        style: AppTextStyles.title3.copyWith(
+                          color: AppColors.accentDark,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        context.t('fast_delivery_body'),
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textSecondary(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  context.t('choose_your_order'),
+                  style: AppTextStyles.title2.copyWith(
+                    color: AppColors.textPrimary(context),
+                  ),
+                ),
+              ),
+              Text(
+                '$productsCount',
+                style: AppTextStyles.captionMedium.copyWith(
+                  color: AppColors.accentDark,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -311,7 +417,7 @@ class _FeaturedProductsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 126,
+      height: 132,
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
         scrollDirection: Axis.horizontal,
@@ -326,12 +432,19 @@ class _FeaturedProductsRow extends StatelessWidget {
             onTap: () => _showRestaurantOrderSheet(context, doc),
             borderRadius: BorderRadius.circular(16),
             child: Container(
-              width: 252,
+              width: 260,
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 color: AppColors.surface(context),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: AppColors.border(context)),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadow(context),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
@@ -400,7 +513,7 @@ class _ProductCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.border(context)),
         boxShadow: [
           BoxShadow(
@@ -458,15 +571,15 @@ class _ProductCard extends StatelessWidget {
                             ),
                           ),
                           SizedBox(
-                            width: 34,
-                            height: 34,
+                            width: 36,
+                            height: 36,
                             child: FilledButton(
                               onPressed: () =>
                                   _showRestaurantOrderSheet(context, doc),
                               style: FilledButton.styleFrom(
                                 padding: EdgeInsets.zero,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(13),
                                 ),
                               ),
                               child: const Icon(Icons.add_rounded, size: 18),

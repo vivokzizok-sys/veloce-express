@@ -7,8 +7,10 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/settings/app_settings.dart';
 import '../../../data/models/order_model.dart';
+import '../../../domain/entities/user_entity.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../order/bloc/order_bloc.dart';
+import '../../shared/widgets/app_menu_button.dart';
 import 'restaurant_products_section.dart';
 
 class ClientHomeScreen extends StatelessWidget {
@@ -20,7 +22,9 @@ class ClientHomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.page(context),
       appBar: AppBar(
-        title: Text(context.t('choose_your_order')),
+        leading: AppMenuButton(user: user),
+        title: const Text('فيلوتشي إكسبرس'),
+        actions: [_HeaderAvatar(user: user), const SizedBox(width: 12)],
       ),
       body: Column(
         children: [
@@ -33,49 +37,76 @@ class ClientHomeScreen extends StatelessWidget {
   }
 }
 
+class _HeaderAvatar extends StatelessWidget {
+  final UserEntity user;
+
+  const _HeaderAvatar({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    return CircleAvatar(
+      radius: 20,
+      backgroundColor: AppColors.accentLight,
+      child: Text(
+        user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : 'V',
+        style: AppTextStyles.captionMedium.copyWith(
+          color: AppColors.accentDark,
+        ),
+      ),
+    );
+  }
+}
+
 class _ClientBottomBar extends StatelessWidget {
-  final dynamic user;
+  final UserEntity user;
 
   const _ClientBottomBar({required this.user});
 
   @override
   Widget build(BuildContext context) {
-    return NavigationBar(
-      selectedIndex: 0,
-      onDestinationSelected: (index) {
-        switch (index) {
-          case 1:
-            context.go('/client/drivers');
-          case 2:
-            context.go('/client/dashboard');
-          case 3:
-            context.go('/client/stores');
-          case 4:
-            context.go('/settings');
-        }
-      },
-      destinations: [
-        NavigationDestination(
-          icon: const Icon(Icons.restaurant_menu_rounded),
-          label: context.t('choose_your_order'),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: NavigationBar(
+          height: 72,
+          selectedIndex: 0,
+          onDestinationSelected: (index) {
+            switch (index) {
+              case 1:
+                context.go('/client/drivers');
+              case 2:
+                context.go('/client/dashboard');
+              case 3:
+                context.go('/client/stores');
+              case 4:
+                context.go('/settings');
+            }
+          },
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.home_rounded),
+              label: context.t('home'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.local_shipping_outlined),
+              label: context.t('drivers'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.insights_rounded),
+              label: context.t('statistics'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.storefront_outlined),
+              label: context.t('stores'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.person_outline_rounded),
+              label: context.t('menu'),
+            ),
+          ],
         ),
-        NavigationDestination(
-          icon: const Icon(Icons.local_shipping_outlined),
-          label: context.t('drivers'),
-        ),
-        NavigationDestination(
-          icon: const Icon(Icons.insights_rounded),
-          label: context.t('statistics'),
-        ),
-        NavigationDestination(
-          icon: const Icon(Icons.storefront_outlined),
-          label: context.t('stores'),
-        ),
-        NavigationDestination(
-          icon: const Icon(Icons.menu_rounded),
-          label: context.t('menu'),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -118,10 +149,12 @@ class _ClientActiveTripBanner extends StatelessWidget {
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: AppColors.isDark(context)
-                    ? AppColors.accent.withOpacity(0.14)
+                    ? AppColors.accent.withValues(alpha: 0.14)
                     : AppColors.accentLight,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.accent.withOpacity(0.25)),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: AppColors.accent.withValues(alpha: 0.25),
+                ),
               ),
               child: Row(
                 children: [
