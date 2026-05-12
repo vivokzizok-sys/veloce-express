@@ -5,31 +5,31 @@ const defaultDownloads = [
     key: "arm64",
     title: "نسخة arm64",
     subtitle: "الأفضل لمعظم الهواتف الحديثة",
-    fileName: "veloce-express-arm64.apk",
+    fileName: "nawdli-express-arm64.apk",
     version: "1.0.0",
     size: "42 MB",
     date: "2026-05-12",
-    url: `${releaseBaseUrl}/veloce-express-arm64.apk`
+    url: `${releaseBaseUrl}/nawdli-express-arm64.apk`
   },
   {
     key: "armv7",
     title: "نسخة armv7",
     subtitle: "نسخة احتياطية للهواتف الأقدم",
-    fileName: "veloce-express-armv7.apk",
+    fileName: "nawdli-express-armv7.apk",
     version: "1.0.0",
     size: "39 MB",
     date: "2026-05-12",
-    url: `${releaseBaseUrl}/veloce-express-armv7.apk`
+    url: `${releaseBaseUrl}/nawdli-express-armv7.apk`
   },
   {
     key: "x86_64",
     title: "نسخة x86_64",
     subtitle: "للمحاكيات وبعض الأجهزة الخاصة",
-    fileName: "veloce-express-x86_64.apk",
+    fileName: "nawdli-express-x86_64.apk",
     version: "1.0.0",
     size: "44 MB",
     date: "2026-05-12",
-    url: `${releaseBaseUrl}/veloce-express-x86_64.apk`
+    url: `${releaseBaseUrl}/nawdli-express-x86_64.apk`
   }
 ];
 

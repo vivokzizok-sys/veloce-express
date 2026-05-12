@@ -5,14 +5,14 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError('Veloce Express is configured for Android only.');
+      throw UnsupportedError('Nawdli express is configured for Android only.');
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return android;
       default:
         throw UnsupportedError(
-            'Veloce Express is configured for Android only.');
+            'Nawdli express is configured for Android only.');
     }
   }
 

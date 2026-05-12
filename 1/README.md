@@ -1,6 +1,6 @@
-# Veloce Express Website Frontend
+# Nawdli express Website Frontend
 
-واجهة موقع تحميل تطبيق Veloce Express مع رابط أدمن خاص، بدون Firebase Storage.
+واجهة موقع تحميل تطبيق Nawdli express مع رابط أدمن خاص، بدون Firebase Storage.
 
 ## الملفات
 
@@ -23,9 +23,9 @@
 
 - GitHub Actions يبني 3 ملفات APK.
 - GitHub Releases يستضيف الملفات مجانًا:
-  - `veloce-express-arm64.apk`
-  - `veloce-express-armv7.apk`
-  - `veloce-express-x86_64.apk`
+  - `nawdli-express-arm64.apk`
+  - `nawdli-express-armv7.apk`
+  - `nawdli-express-x86_64.apk`
 - الموقع يعرض الروابط الثلاثة، وإذا لم تعمل نسخة يحمل المستخدم الأخرى.
 
 ## رابط الأدمن

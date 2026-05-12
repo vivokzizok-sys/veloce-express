@@ -38,7 +38,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.popOrGo('/client/home'),
         ),
-        title: const Text('Veloce Express'),
+        title: const Text('Nawdli express'),
       ),
       body: BlocBuilder<OrderBloc, OrderState>(
         builder: (context, state) {

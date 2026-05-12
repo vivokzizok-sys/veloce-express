@@ -74,7 +74,7 @@ class AppStrings {
     'terms': 'Terms',
     'legal': 'Legal',
     'privacy_1':
-        'Veloce Express stores the account information needed to run deliveries: name, email, phone number, role, orders, bids, ratings, and support messages.',
+        'Nawdli express stores the account information needed to run deliveries: name, email, phone number, role, orders, bids, ratings, and support messages.',
     'privacy_2':
         'Driver vehicle photos are stored in Firestore as compressed Base64 data because Firebase Storage is not used in this version.',
     'privacy_3':
@@ -88,7 +88,7 @@ class AppStrings {
     'terms_3':
         'Clients are responsible for accepting a bid only when they agree with the price and details.',
     'terms_4':
-        'Admins may approve, block, or review accounts and tickets to protect Veloce Express users.',
+        'Admins may approve, block, or review accounts and tickets to protect Nawdli express users.',
     'account_settings': 'Account settings',
     'appearance': 'Appearance',
     'light': 'Light',
@@ -155,7 +155,7 @@ class AppStrings {
     'create_account': 'Create account',
     'choose_account_type': 'Choose account type',
     'choose_account_type_body':
-        'Select how you will use Veloce Express, then complete your account.',
+        'Select how you will use Nawdli express, then complete your account.',
     'change': 'Change',
     'already_have_account': 'I already have an account',
     'client': 'Client',
@@ -219,7 +219,7 @@ class AppStrings {
     'to': 'To',
     'bids': 'Bids',
     'no_orders_yet': 'No orders yet',
-    'create_first_order': 'Create your first Veloce Express request.',
+    'create_first_order': 'Create your first Nawdli express request.',
     'order_not_found': 'Order not found',
     'order_missing': 'This request no longer exists.',
     'no_bids_yet': 'No bids yet',
@@ -232,7 +232,7 @@ class AppStrings {
     'valid_amount': 'Enter a valid amount',
     'send_bid': 'Send Bid',
     'no_jobs_available': 'No jobs available',
-    'open_requests_appear': 'Open Veloce Express requests will appear here.',
+    'open_requests_appear': 'Open Nawdli express requests will appear here.',
     'active_trip': 'Active trip',
     'you': 'You',
     'live': 'LIVE',
@@ -329,7 +329,7 @@ class AppStrings {
     'total_earned': 'Total earned',
     'available_jobs': 'Available jobs',
     'statistics': 'Statistics',
-    'dashboard_overview': 'A quick view of your activity in Veloce Express.',
+    'dashboard_overview': 'A quick view of your activity in Nawdli express.',
     'show_all': 'Show all',
     'tickets': 'Tickets',
     'no_tickets': 'No support tickets',
@@ -356,7 +356,7 @@ class AppStrings {
     'called_from_app': 'From app',
     'update_required': 'Update required',
     'update_required_body':
-        'A new version is required to continue using Veloce Express.',
+        'A new version is required to continue using Nawdli express.',
     'download_update': 'Download update',
     'image_too_large': 'Image is too large. Choose a smaller photo.',
     'image_saved': 'Image saved.',
@@ -423,7 +423,7 @@ class AppStrings {
     'terms': 'الشروط',
     'legal': 'القانونية',
     'privacy_1':
-        'يحفظ Veloce Express بيانات الحساب الضرورية لتشغيل التوصيل: الاسم والبريد ورقم الهاتف والدور والطلبات والعروض والتقييمات ورسائل الدعم.',
+        'يحفظ Nawdli express بيانات الحساب الضرورية لتشغيل التوصيل: الاسم والبريد ورقم الهاتف والدور والطلبات والعروض والتقييمات ورسائل الدعم.',
     'privacy_2':
         'صور مركبات السائقين تحفظ في Firestore بصيغة Base64 مضغوطة لأن Firebase Storage غير مستخدم في هذه النسخة.',
     'privacy_3':
@@ -437,7 +437,7 @@ class AppStrings {
     'terms_3':
         'الزبون مسؤول عن قبول العرض فقط عندما يوافق على السعر والتفاصيل.',
     'terms_4':
-        'يمكن للأدمن قبول أو حظر الحسابات ومراجعة البلاغات لحماية مستخدمي Veloce Express.',
+        'يمكن للأدمن قبول أو حظر الحسابات ومراجعة البلاغات لحماية مستخدمي Nawdli express.',
     'account_settings': 'إعدادات الحساب',
     'appearance': 'المظهر',
     'light': 'نهار',
@@ -499,7 +499,7 @@ class AppStrings {
     'create_account': 'إنشاء حساب',
     'choose_account_type': 'اختر نوع الحساب',
     'choose_account_type_body':
-        'اختر كيف ستستعمل Veloce Express ثم أكمل إنشاء الحساب.',
+        'اختر كيف ستستعمل Nawdli express ثم أكمل إنشاء الحساب.',
     'change': 'تغيير',
     'already_have_account': 'لدي حساب بالفعل',
     'client': 'زبون',
@@ -549,7 +549,7 @@ class AppStrings {
     'to': 'إلى',
     'bids': 'العروض',
     'no_orders_yet': 'لا توجد طلبات بعد',
-    'create_first_order': 'أنشئ أول طلب في Veloce Express.',
+    'create_first_order': 'أنشئ أول طلب في Nawdli express.',
     'order_not_found': 'الطلب غير موجود',
     'order_missing': 'هذا الطلب لم يعد موجودًا.',
     'no_bids_yet': 'لا توجد عروض بعد',
@@ -562,7 +562,7 @@ class AppStrings {
     'valid_amount': 'أدخل مبلغًا صحيحًا',
     'send_bid': 'إرسال العرض',
     'no_jobs_available': 'لا توجد طلبات متاحة',
-    'open_requests_appear': 'ستظهر طلبات Veloce Express المفتوحة هنا.',
+    'open_requests_appear': 'ستظهر طلبات Nawdli express المفتوحة هنا.',
     'active_trip': 'رحلة نشطة',
     'you': 'أنت',
     'live': 'مباشر',
@@ -621,7 +621,7 @@ class AppStrings {
     'total_earned': 'إجمالي الربح',
     'available_jobs': 'الطلبات المتاحة',
     'statistics': 'الإحصائيات',
-    'dashboard_overview': 'نظرة عامة على نشاطك في Veloce Express.',
+    'dashboard_overview': 'نظرة عامة على نشاطك في Nawdli express.',
     'show_all': 'عرض الكل',
     'tickets': 'التذاكر',
     'no_tickets': 'لا توجد تذاكر دعم',
@@ -738,7 +738,7 @@ class AppStrings {
     'update_required':
         '\u062a\u062d\u062f\u064a\u062b \u0645\u0637\u0644\u0648\u0628',
     'update_required_body':
-        '\u064a\u062c\u0628 \u062a\u062d\u0645\u064a\u0644 \u0627\u0644\u0646\u0633\u062e\u0629 \u0627\u0644\u062c\u062f\u064a\u062f\u0629 \u0644\u0645\u062a\u0627\u0628\u0639\u0629 \u0627\u0633\u062a\u062e\u062f\u0627\u0645 Veloce Express.',
+        '\u064a\u062c\u0628 \u062a\u062d\u0645\u064a\u0644 \u0627\u0644\u0646\u0633\u062e\u0629 \u0627\u0644\u062c\u062f\u064a\u062f\u0629 \u0644\u0645\u062a\u0627\u0628\u0639\u0629 \u0627\u0633\u062a\u062e\u062f\u0627\u0645 Nawdli express.',
     'download_update':
         '\u062a\u062d\u0645\u064a\u0644 \u0627\u0644\u062a\u062d\u062f\u064a\u062b',
     'wilaya': 'الولاية',

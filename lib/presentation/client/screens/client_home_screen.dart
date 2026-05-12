@@ -25,7 +25,7 @@ class ClientHomeScreen extends StatelessWidget {
       backgroundColor: AppColors.page(context),
       appBar: AppBar(
         leading: AppMenuButton(user: user),
-        title: const Text('Veloce Express'),
+        title: const Text('Nawdli express'),
         actions: [_HeaderAvatar(user: user), const SizedBox(width: 12)],
       ),
       body: Column(

@@ -37,7 +37,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       child: Scaffold(
         backgroundColor: AppColors.page(context),
         appBar: AppBar(
-          title: const Text('Veloce Express'),
+          title: const Text('Nawdli express'),
           leading: AppMenuButton(user: user),
         ),
         body: Column(

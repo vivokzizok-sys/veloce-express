@@ -14,7 +14,7 @@ class SplashScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Veloce Express', style: AppTextStyles.largeTitle),
+            Text('Nawdli express', style: AppTextStyles.largeTitle),
             SizedBox(height: 18),
             CircularProgressIndicator(strokeWidth: 2),
           ],

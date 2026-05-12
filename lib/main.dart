@@ -45,17 +45,17 @@ Future<void> main() async {
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
 
-  runApp(const VeloceExpressApp());
+  runApp(const NawdliExpressApp());
 }
 
-class VeloceExpressApp extends StatefulWidget {
-  const VeloceExpressApp({super.key});
+class NawdliExpressApp extends StatefulWidget {
+  const NawdliExpressApp({super.key});
 
   @override
-  State<VeloceExpressApp> createState() => _VeloceExpressAppState();
+  State<NawdliExpressApp> createState() => _NawdliExpressAppState();
 }
 
-class _VeloceExpressAppState extends State<VeloceExpressApp> {
+class _NawdliExpressAppState extends State<NawdliExpressApp> {
   late final AuthRepository _authRepo;
   late final OrderRepository _orderRepo;
   late final TrackingRepository _trackingRepo;
@@ -140,7 +140,7 @@ class _VeloceExpressAppState extends State<VeloceExpressApp> {
           animation: _settingsController,
           builder: (context, _) {
             return MaterialApp.router(
-              title: 'Veloce Express',
+              title: 'Nawdli express',
               debugShowCheckedModeBanner: false,
               theme: AppTheme.light,
               darkTheme: AppTheme.dark,
@@ -237,7 +237,7 @@ class _IntroGateState extends State<_IntroGate> {
               )
             : const Center(
                 child: Text(
-                  'Veloce Express',
+                  'Nawdli express',
                   style: AppTextStyles.largeTitle,
                 ),
               ),

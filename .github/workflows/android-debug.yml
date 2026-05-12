@@ -71,29 +71,29 @@ jobs:
 
       - name: Rename APKs
         run: |
-          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/app/outputs/flutter-apk/veloce-express-arm64.apk
-          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk build/app/outputs/flutter-apk/veloce-express-armv7.apk
-          mv build/app/outputs/flutter-apk/app-x86_64-release.apk build/app/outputs/flutter-apk/veloce-express-x86_64.apk
+          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/app/outputs/flutter-apk/nawdli-express-arm64.apk
+          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk build/app/outputs/flutter-apk/nawdli-express-armv7.apk
+          mv build/app/outputs/flutter-apk/app-x86_64-release.apk build/app/outputs/flutter-apk/nawdli-express-x86_64.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: veloce-express-release-apks
-          path: build/app/outputs/flutter-apk/veloce-express-*.apk
+          name: nawdli-express-release-apks
+          path: build/app/outputs/flutter-apk/nawdli-express-*.apk
 
       - name: Publish APKs to GitHub Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: android-latest
-          name: Veloce Express Android APK
+          name: Nawdli express Android APK
           body: |
-            Latest Android APK files for Veloce Express.
+            Latest Android APK files for Nawdli express.
 
             If one APK does not install on a device, try another architecture file.
           make_latest: true
           overwrite_files: true
           files: |
-            build/app/outputs/flutter-apk/veloce-express-arm64.apk
-            build/app/outputs/flutter-apk/veloce-express-armv7.apk
-            build/app/outputs/flutter-apk/veloce-express-x86_64.apk
+            build/app/outputs/flutter-apk/nawdli-express-arm64.apk
+            build/app/outputs/flutter-apk/nawdli-express-armv7.apk
+            build/app/outputs/flutter-apk/nawdli-express-x86_64.apk
