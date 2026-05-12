@@ -125,6 +125,7 @@ function initFirebase() {
 }
 
 async function loadRemoteDownloads() {
+  if (!document.querySelector("[data-admin-private]")) return;
   const services = initFirebase();
   if (!services) return;
   try {
@@ -163,7 +164,7 @@ function renderPublicDownloads() {
 
 function renderCurrentRelease() {
   const latest = latestDownload();
-  const strip = document.querySelector("[data-current-release]");
+  const strip = document.querySelector("[data-version-strip]");
   const versionLabel = document.querySelector("[data-version-label]");
   const sizeLabel = document.querySelector("[data-size-label]");
   if (strip) {
