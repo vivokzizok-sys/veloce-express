@@ -10,6 +10,9 @@ concurrency:
   group: android-release-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -77,3 +80,20 @@ jobs:
         with:
           name: veloce-express-release-apks
           path: build/app/outputs/flutter-apk/veloce-express-*.apk
+
+      - name: Publish APKs to GitHub Release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: Veloce Express Android APK
+          body: |
+            Latest Android APK files for Veloce Express.
+
+            If one APK does not install on a device, try another architecture file.
+          make_latest: true
+          overwrite_files: true
+          files: |
+            build/app/outputs/flutter-apk/veloce-express-arm64.apk
+            build/app/outputs/flutter-apk/veloce-express-armv7.apk
+            build/app/outputs/flutter-apk/veloce-express-x86_64.apk

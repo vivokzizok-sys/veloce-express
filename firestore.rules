@@ -376,6 +376,16 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /app_releases/{releaseId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /site_config/{configId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /subscription_payments/{paymentId} {
       allow create: if isApproved()
         && request.resource.data.userId == request.auth.uid

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#d60000">
+  <title>Veloce Express | دخول الأدمن</title>
+  <link rel="icon" type="image/png" href="public/app-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="admin-body glass-admin">
+  <main class="admin-login-shell">
+    <section class="glass-login-card reveal" data-auth-panel>
+      <img src="public/app-icon.png" alt="Veloce Express">
+      <p class="eyebrow">لوحة خاصة</p>
+      <h1>دخول الأدمن</h1>
+      <p>هذا الرابط غير ظاهر للزوار. سجل الدخول لتعديل روابط نسخ APK ومعلومات الموقع.</p>
+      <form class="login-form glass-form" data-login-form>
+        <label>الجيميل<input name="email" type="email" placeholder="admin@gmail.com" required></label>
+        <label>كلمة المرور<input name="password" type="password" placeholder="••••••••" required></label>
+        <button class="primary-button wide" type="submit">دخول</button>
+      </form>
+      <div class="auth-state" data-auth-state>يجب أن يكون الحساب أدمن داخل Firestore.</div>
+      <a class="quiet-link" href="index.html">العودة للموقع</a>
+    </section>
+
+    <section class="admin-dashboard is-hidden" data-admin-private>
+      <div class="admin-topbar">
+        <a class="brand" href="index.html"><img src="public/app-icon.png" alt=""><span>Veloce Express</span></a>
+        <button class="secondary-button" type="button" data-logout-button>تسجيل الخروج</button>
+      </div>
+
+      <div class="admin-hero">
+        <div>
+          <p class="eyebrow">بدون Firebase Storage</p>
+          <h1>إدارة روابط APK</h1>
+          <p>الحل المجاني هو GitHub Releases. اترك الروابط كما هي إذا كان GitHub Actions ينشر الملفات تلقائيًا.</p>
+        </div>
+        <div class="admin-card">
+          <span>آخر إصدار</span>
+          <strong data-admin-latest>1.0.0</strong>
+          <small>الملفات الثلاثة تظهر للزوار كخيارات تحميل احتياطية.</small>
+        </div>
+      </div>
+
+      <section class="admin-grid">
+        <form class="admin-panel" data-downloads-form>
+          <div class="panel-head">
+            <h2>روابط النسخ الثلاث</h2>
+            <p>لا ترفع APK هنا. ارفعه عبر GitHub Release أو دع GitHub Actions يرفعه تلقائيًا.</p>
+          </div>
+          <label>الإصدار<input name="version" value="1.0.0" required></label>
+          <label>رابط arm64<input name="arm64Url" dir="ltr" required></label>
+          <label>حجم arm64<input name="arm64Size" value="42 MB" required></label>
+          <label>رابط armv7<input name="armv7Url" dir="ltr" required></label>
+          <label>حجم armv7<input name="armv7Size" value="39 MB" required></label>
+          <label>رابط x86_64<input name="x64Url" dir="ltr" required></label>
+          <label>حجم x86_64<input name="x64Size" value="44 MB" required></label>
+          <button class="primary-button wide" type="submit">حفظ الروابط</button>
+        </form>
+
+        <section class="admin-panel">
+          <div class="panel-head">
+            <h2>معاينة ما يظهر للناس</h2>
+            <p>هذه نفس قائمة التحميل التي تظهر في الصفحة الرئيسية.</p>
+          </div>
+          <div class="versions-list" data-admin-download-preview></div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <div class="toast" data-toast></div>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
