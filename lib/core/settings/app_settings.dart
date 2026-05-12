@@ -202,6 +202,8 @@ class AppStrings {
     'leave_comment': 'Leave a comment (optional)',
     'status_open': 'Open',
     'status_storePending': 'At restaurant',
+    'status_storeDriverPending': 'Waiting for driver',
+    'status_storeDriverRejected': 'Driver did not accept',
     'status_requested': 'Requested',
     'status_priced': 'Priced',
     'status_bidding': 'Bidding',
@@ -381,6 +383,11 @@ class AppStrings {
         'Your free period has ended. Pay the monthly subscription and upload the receipt for admin approval.',
     'baridimob_number': 'BaridiMob number',
     'monthly_fee': 'Monthly fee',
+    'driver_monthly_fee': 'Driver monthly fee',
+    'restaurant_monthly_fee': 'Restaurant monthly fee',
+    'grocery_monthly_fee': 'Grocery monthly fee',
+    'hardware_monthly_fee': 'Hardware monthly fee',
+    'produce_monthly_fee': 'Vegetables monthly fee',
     'upload_payment_receipt': 'Upload payment receipt',
     'send_subscription': 'Send subscription',
     'subscription_sent': 'Payment receipt sent for review.',
@@ -389,6 +396,11 @@ class AppStrings {
     'fresh_restaurants': 'Fresh meals near you',
     'fresh_restaurants_body':
         'Browse restaurant meals and order delivery with a fixed delivery fee.',
+    'reject_order': 'Reject order',
+    'waiting_driver_acceptance': 'Waiting for the driver to accept.',
+    'driver_rejected_order': 'The driver did not accept this order.',
+    'choose_another_driver': 'Choose another driver',
+    'you_rejected_order': 'You rejected this order.',
   };
 
   static const _ar = <String, String>{
@@ -520,6 +532,8 @@ class AppStrings {
     'leave_comment': 'اترك تعليقًا (اختياري)',
     'status_open': 'مفتوح',
     'status_storePending': 'عند المطعم',
+    'status_storeDriverPending': 'بانتظار قبول السائق',
+    'status_storeDriverRejected': 'لم يقبل السائق',
     'status_requested': 'مرسل للسائق',
     'status_priced': 'تم إرسال السعر',
     'status_bidding': 'توجد عروض',
@@ -750,6 +764,11 @@ class AppStrings {
         'انتهت الفترة المجانية. ادفع الاشتراك الشهري وارفع صورة الوصل ليوافق الأدمن.',
     'baridimob_number': 'رقم بريدي موب',
     'monthly_fee': 'الاشتراك الشهري',
+    'driver_monthly_fee': 'اشتراك السائق الشهري',
+    'restaurant_monthly_fee': 'اشتراك المطعم الشهري',
+    'grocery_monthly_fee': 'اشتراك البقالة الشهري',
+    'hardware_monthly_fee': 'اشتراك الكنكاري الشهري',
+    'produce_monthly_fee': 'اشتراك الخضار الشهري',
     'upload_payment_receipt': 'رفع صورة الوصل',
     'send_subscription': 'إرسال الاشتراك',
     'subscription_sent': 'تم إرسال وصل الدفع للمراجعة.',
@@ -757,6 +776,11 @@ class AppStrings {
     'available_products': 'المنتجات المتاحة',
     'fresh_restaurants': 'وجبات طازجة قريبة منك',
     'fresh_restaurants_body': 'تصفح وجبات المطاعم واطلب التوصيل بسعر ثابت.',
+    'reject_order': 'رفض الطلب',
+    'waiting_driver_acceptance': 'بانتظار قبول السائق.',
+    'driver_rejected_order': 'السائق لم يقبل هذا الطلب.',
+    'choose_another_driver': 'اختيار سائق آخر',
+    'you_rejected_order': 'لقد رفضت هذا الطلب.',
   };
 
   static String translate(AppLanguage language, String key) {

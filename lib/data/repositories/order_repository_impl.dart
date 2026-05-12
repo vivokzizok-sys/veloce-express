@@ -126,7 +126,8 @@ class OrderRepositoryImpl implements OrderRepository {
           'status',
           whereIn: [
             'requested',
-            'storePending',
+            'storeDriverPending',
+            'storeDriverRejected',
             'priced',
             'accepted',
             'inProgress',

@@ -106,6 +106,8 @@ class OrderDetailScreen extends StatelessWidget {
                 if (order.status == OrderStatus.open ||
                     order.status == OrderStatus.bidding ||
                     order.status == OrderStatus.storePending ||
+                    order.status == OrderStatus.storeDriverPending ||
+                    order.status == OrderStatus.storeDriverRejected ||
                     order.status == OrderStatus.requested ||
                     order.status == OrderStatus.priced) ...[
                   const SizedBox(height: 12),
@@ -426,10 +428,6 @@ class _BidTile extends StatelessWidget {
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: AppColors.textPrimary(context),
                         )),
-                    Text(
-                      '${context.t('rating')} ${bid.driverRating.toStringAsFixed(1)}',
-                      style: AppTextStyles.caption,
-                    ),
                   ],
                 ),
               ),

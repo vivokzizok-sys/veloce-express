@@ -57,12 +57,6 @@ class _ActiveTripScreenState extends State<ActiveTripScreen>
       context
           .read<TrackingBloc>()
           .add(TrackingWatchDriver(widget.otherParty.uid));
-      if (widget.order.status == OrderStatus.delivered &&
-          widget.order.clientRating == null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _showRatingSheet(context);
-        });
-      }
     }
   }
 
@@ -101,7 +95,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen>
             );
             context.go('/driver/home');
           } else {
-            _showRatingSheet(context);
+            context.go('/client/home');
           }
         }
         if (state is TrackingRated) context.go('/client/home');
@@ -213,47 +207,6 @@ class _ActiveTripScreenState extends State<ActiveTripScreen>
         },
       ),
     );
-  }
-
-  void _showRatingSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isDismissible: false,
-      enableDrag: false,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _RatingSheet(
-        driverName: widget.otherParty.fullName,
-        onSubmit: (rating, comment) {
-          Navigator.pop(context);
-          context.read<TrackingBloc>().add(TrackingRateDriver(
-                orderId: widget.order.orderId,
-                driverId: widget.otherParty.uid,
-                rating: rating,
-                comment: comment,
-              ));
-        },
-        onSkip: () async {
-          Navigator.pop(context);
-          await _deleteTripChat();
-          if (context.mounted) context.go('/client/home');
-        },
-      ),
-    );
-  }
-
-  Future<void> _deleteTripChat() async {
-    final messages = await FirebaseFirestore.instance
-        .collection('orders')
-        .doc(widget.order.orderId)
-        .collection('messages')
-        .limit(200)
-        .get();
-    if (messages.docs.isEmpty) return;
-    final batch = FirebaseFirestore.instance.batch();
-    for (final doc in messages.docs) {
-      batch.delete(doc.reference);
-    }
-    await batch.commit();
   }
 }
 
@@ -823,128 +776,6 @@ class _ConfirmTripSheet extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             backgroundColor: AppColors.surfaceAlt(context),
             foregroundColor: AppColors.textPrimary(context),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RatingSheet extends StatefulWidget {
-  final String driverName;
-  final void Function(double rating, String? comment) onSubmit;
-  final Future<void> Function() onSkip;
-
-  const _RatingSheet({
-    required this.driverName,
-    required this.onSubmit,
-    required this.onSkip,
-  });
-
-  @override
-  State<_RatingSheet> createState() => _RatingSheetState();
-}
-
-class _RatingSheetState extends State<_RatingSheet>
-    with SingleTickerProviderStateMixin {
-  double _rating = 0;
-  final _commentCtrl = TextEditingController();
-  late final AnimationController _starCtrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _starCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    )..forward();
-  }
-
-  @override
-  void dispose() {
-    _commentCtrl.dispose();
-    _starCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 78,
-            height: 78,
-            decoration: const BoxDecoration(
-              color: AppColors.success,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.check_rounded,
-              color: AppColors.white,
-              size: 44,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(context.t('rate_experience'), style: AppTextStyles.title2),
-          const SizedBox(height: 6),
-          Text(
-            '${context.t('how_was')} ${widget.driverName}?',
-            style: AppTextStyles.body.copyWith(
-              color: AppColors.textSecondary(context),
-            ),
-          ),
-          const SizedBox(height: 22),
-          ScaleTransition(
-            scale: CurvedAnimation(parent: _starCtrl, curve: Curves.elasticOut),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(5, (i) {
-                final filled = i < _rating;
-                return IconButton(
-                  onPressed: () {
-                    HapticFeedback.selectionClick();
-                    setState(() => _rating = (i + 1).toDouble());
-                  },
-                  icon: Icon(
-                    filled ? Icons.star_rounded : Icons.star_outline_rounded,
-                    color: filled ? AppColors.warning : AppColors.grey200,
-                    size: 36,
-                  ),
-                );
-              }),
-            ),
-          ),
-          const SizedBox(height: 14),
-          TextField(
-            controller: _commentCtrl,
-            maxLines: 2,
-            decoration: InputDecoration(
-              hintText: context.t('leave_comment'),
-            ),
-          ),
-          const SizedBox(height: 20),
-          PrimaryButton(
-            label: context.t('submit_rating'),
-            onPressed: _rating > 0
-                ? () => widget.onSubmit(
-                      _rating,
-                      _commentCtrl.text.trim().isEmpty
-                          ? null
-                          : _commentCtrl.text.trim(),
-                    )
-                : null,
-          ),
-          TextButton(
-            onPressed: widget.onSkip,
-            child: Text(context.t('skip')),
           ),
         ],
       ),

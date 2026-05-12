@@ -612,6 +612,13 @@ class _StoreOrderTile extends StatelessWidget {
           Text('${context.t('phone')}: ${order.clientPhone}'),
           if (order.quantity > 0)
             Text('${context.t('quantity')}: ${order.quantity}'),
+          if (order.productsTotal != null)
+            Text(
+              '${context.t('products_total')}: ${order.productsTotal!.toStringAsFixed(0)} DA',
+            ),
+          Text(
+            '${context.t('delivery_fee')}: ${order.deliveryFee.toStringAsFixed(0)} DA',
+          ),
           if (order.totalAmount != null)
             Text(
               '${context.t('total')}: ${order.totalAmount!.toStringAsFixed(0)} DA',
@@ -619,8 +626,44 @@ class _StoreOrderTile extends StatelessWidget {
           Text('${context.t('delivery_address')}: ${order.dropoffAddress}'),
           if (order.status == OrderStatus.storePending) ...[
             const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _rejectStoreOrder(context, order),
+                    icon: const Icon(Icons.close_rounded),
+                    label: Text(context.t('reject_order')),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () => _showDriverSelection(context, order),
+                    icon: const Icon(Icons.local_shipping_outlined),
+                    label: Text(context.t('choose_driver')),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (order.status == OrderStatus.storeDriverPending) ...[
+            const SizedBox(height: 10),
+            Text(
+              context.t('waiting_driver_acceptance'),
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.textSecondary(context),
+              ),
+            ),
+          ],
+          if (order.status == OrderStatus.storeDriverRejected) ...[
+            const SizedBox(height: 10),
+            Text(
+              context.t('driver_rejected_order'),
+              style: AppTextStyles.caption.copyWith(color: AppColors.error),
+            ),
+            const SizedBox(height: 10),
             PrimaryButton(
-              label: context.t('choose_driver'),
+              label: context.t('choose_another_driver'),
               icon: const Icon(Icons.local_shipping_outlined),
               onPressed: () => _showDriverSelection(context, order),
             ),
@@ -673,6 +716,8 @@ class _StoreOrderTile extends StatelessWidget {
 
   Color _statusColor(OrderStatus status) => switch (status) {
         OrderStatus.storePending => AppColors.warning,
+        OrderStatus.storeDriverPending => AppColors.info,
+        OrderStatus.storeDriverRejected => AppColors.error,
         OrderStatus.requested => AppColors.info,
         OrderStatus.priced => AppColors.warning,
         OrderStatus.rejected => AppColors.error,
@@ -683,6 +728,20 @@ class _StoreOrderTile extends StatelessWidget {
         OrderStatus.delivered => AppColors.grey400,
         OrderStatus.cancelled => AppColors.error,
       };
+
+  Future<void> _rejectStoreOrder(
+    BuildContext context,
+    OrderEntity order,
+  ) async {
+    await FirebaseFirestore.instance
+        .collection('orders')
+        .doc(order.orderId)
+        .update({
+      'status': 'rejected',
+      'rejectedByStoreAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
 }
 
 Future<void> _showDriverSelection(
@@ -765,9 +824,8 @@ class _DriverSelectionSheet extends StatelessWidget {
         .get();
     var busyIds = <String>{};
     try {
-      var query = db
-          .collection('orders')
-          .where('status', whereIn: ['accepted', 'inProgress']);
+      var query = db.collection('orders').where('status',
+          whereIn: ['storeDriverPending', 'accepted', 'inProgress']);
       if (storeId != null && storeId.isNotEmpty) {
         query = query.where('storeId', isEqualTo: storeId);
       }
@@ -791,13 +849,15 @@ class _DriverSelectionSheet extends StatelessWidget {
     final db = FirebaseFirestore.instance;
     final pushTitle = context.t('store_delivery_assigned');
     final restaurantName = order.storeName ?? context.t('restaurant');
-    final pushBody = '$restaurantName - ${order.dropoffAddress}';
+    final total = order.totalAmount ?? order.deliveryFee;
+    final pushBody =
+        '$restaurantName - ${context.t('total')}: ${total.toStringAsFixed(0)} DA';
     await db.collection('orders').doc(order.orderId).update({
-      'status': 'accepted',
+      'status': 'storeDriverPending',
       'driverId': driver.id,
       'acceptedBidAmount': order.deliveryFee,
-      'acceptedAt': FieldValue.serverTimestamp(),
       'assignedByStoreAt': FieldValue.serverTimestamp(),
+      'driverRespondedAt': null,
       'updatedAt': FieldValue.serverTimestamp(),
     });
     await db.collection('notifications').add({
@@ -806,7 +866,7 @@ class _DriverSelectionSheet extends StatelessWidget {
       'type': 'store_delivery_assigned',
       'title': 'Restaurant delivery assigned',
       'body':
-          '${order.storeName ?? 'Restaurant'} needs pickup to ${order.dropoffAddress}.',
+          '${order.storeName ?? 'Restaurant'} needs pickup. Total: ${total.toStringAsFixed(0)} DA.',
       'createdBy': order.storeId,
       'read': false,
       'createdAt': FieldValue.serverTimestamp(),

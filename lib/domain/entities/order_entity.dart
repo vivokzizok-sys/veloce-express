@@ -1,5 +1,7 @@
 enum OrderStatus {
   storePending,
+  storeDriverPending,
+  storeDriverRejected,
   requested,
   priced,
   rejected,
@@ -14,6 +16,8 @@ enum OrderStatus {
 extension OrderStatusX on OrderStatus {
   String get value => switch (this) {
         OrderStatus.storePending => 'storePending',
+        OrderStatus.storeDriverPending => 'storeDriverPending',
+        OrderStatus.storeDriverRejected => 'storeDriverRejected',
         OrderStatus.requested => 'requested',
         OrderStatus.priced => 'priced',
         OrderStatus.rejected => 'rejected',
@@ -27,6 +31,8 @@ extension OrderStatusX on OrderStatus {
 
   static OrderStatus fromString(String value) => switch (value) {
         'storePending' => OrderStatus.storePending,
+        'storeDriverPending' => OrderStatus.storeDriverPending,
+        'storeDriverRejected' => OrderStatus.storeDriverRejected,
         'requested' => OrderStatus.requested,
         'priced' => OrderStatus.priced,
         'rejected' => OrderStatus.rejected,

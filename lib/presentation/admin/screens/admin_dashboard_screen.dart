@@ -816,18 +816,6 @@ class _UserRow extends StatelessWidget {
                     '⭐ ${rating.toStringAsFixed(1)} · $deliveries ${context.t('trips_label')}',
                     style: AppTextStyles.caption,
                   ),
-                if (role == 'driver')
-                  TextButton.icon(
-                    onPressed: () => _showDriverComments(context, db, uid),
-                    icon: const Icon(Icons.rate_review_outlined, size: 16),
-                    label: Text(context.t('comments')),
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.accent,
-                      padding: EdgeInsets.zero,
-                      visualDensity: VisualDensity.compact,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  ),
               ],
             ),
           ),
@@ -887,152 +875,6 @@ class _UserRow extends StatelessWidget {
 }
 
 // ── Shared Empty State ────────────────────────────────────────
-
-void _showDriverComments(
-  BuildContext context,
-  FirebaseFirestore db,
-  String driverId,
-) {
-  showModalBottomSheet(
-    context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
-    backgroundColor: AppColors.surface(context),
-    builder: (_) => AppSettingsScope(
-      controller: context.settings,
-      child: _DriverCommentsSheet(db: db, driverId: driverId),
-    ),
-  );
-}
-
-class _DriverCommentsSheet extends StatelessWidget {
-  final FirebaseFirestore db;
-  final String driverId;
-
-  const _DriverCommentsSheet({required this.db, required this.driverId});
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: SizedBox(
-        height: MediaQuery.sizeOf(context).height * 0.72,
-        child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-          stream: db
-              .collection('orders')
-              .where('driverId', isEqualTo: driverId)
-              .where('status', isEqualTo: 'delivered')
-              .orderBy('createdAt', descending: true)
-              .limit(50)
-              .snapshots(),
-          builder: (context, snap) {
-            if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            final docs = (snap.data?.docs ?? []).where((doc) {
-              final data = doc.data();
-              return ((data['clientRatingComment'] as String?)
-                      ?.trim()
-                      .isNotEmpty ??
-                  false);
-            }).toList();
-
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
-              children: [
-                Text(context.t('comments'), style: AppTextStyles.title2),
-                const SizedBox(height: 12),
-                if (docs.isEmpty)
-                  Text(
-                    context.t('no_comments'),
-                    style: AppTextStyles.body.copyWith(
-                      color: AppColors.textSecondary(context),
-                    ),
-                  )
-                else
-                  for (final doc in docs)
-                    _AdminCommentRow(
-                      orderId: doc.id,
-                      data: doc.data(),
-                      onDelete: () =>
-                          db.collection('orders').doc(doc.id).update({
-                        'clientRatingComment': null,
-                        'commentDeletedByAdmin': true,
-                        'commentDeletedAt': FieldValue.serverTimestamp(),
-                        'updatedAt': FieldValue.serverTimestamp(),
-                      }),
-                    ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class _AdminCommentRow extends StatelessWidget {
-  final String orderId;
-  final Map<String, dynamic> data;
-  final VoidCallback onDelete;
-
-  const _AdminCommentRow({
-    required this.orderId,
-    required this.data,
-    required this.onDelete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final comment = data['clientRatingComment'] as String? ?? '';
-    final clientName = data['clientName'] as String? ?? context.t('client');
-    final rating = (data['clientRating'] as num?)?.toDouble() ?? 0;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceAlt(context),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '$clientName - ${rating.toStringAsFixed(1)}',
-                  style: AppTextStyles.captionMedium.copyWith(
-                    color: AppColors.textPrimary(context),
-                  ),
-                ),
-              ),
-              IconButton(
-                tooltip: context.t('delete_comment'),
-                onPressed: onDelete,
-                icon: const Icon(Icons.delete_outline_rounded),
-                color: AppColors.error,
-              ),
-            ],
-          ),
-          Text(
-            comment,
-            style: AppTextStyles.body.copyWith(
-              color: AppColors.textPrimary(context),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '${context.t('order')}: ${orderId.substring(0, 8).toUpperCase()}',
-            style: AppTextStyles.caption.copyWith(
-              color: AppColors.textSecondary(context),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _TicketsTab extends StatelessWidget {
   final FirebaseFirestore db;
@@ -1544,25 +1386,51 @@ class _PaymentConfigCard extends StatefulWidget {
 
 class _PaymentConfigCardState extends State<_PaymentConfigCard> {
   final _baridiMob = TextEditingController();
-  final _fee = TextEditingController(text: '1500');
+  final _driverFee = TextEditingController(text: '1500');
+  final _restaurantFee = TextEditingController(text: '1500');
+  final _groceryFee = TextEditingController(text: '1500');
+  final _hardwareFee = TextEditingController(text: '1500');
+  final _produceFee = TextEditingController(text: '1500');
   bool _loaded = false;
   bool _saving = false;
 
   @override
   void dispose() {
     _baridiMob.dispose();
-    _fee.dispose();
+    _driverFee.dispose();
+    _restaurantFee.dispose();
+    _groceryFee.dispose();
+    _hardwareFee.dispose();
+    _produceFee.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
-    final fee = double.tryParse(_fee.text.trim());
-    if (_baridiMob.text.trim().isEmpty || fee == null || fee <= 0) return;
+    final driverFee = double.tryParse(_driverFee.text.trim());
+    final restaurantFee = double.tryParse(_restaurantFee.text.trim());
+    final groceryFee = double.tryParse(_groceryFee.text.trim());
+    final hardwareFee = double.tryParse(_hardwareFee.text.trim());
+    final produceFee = double.tryParse(_produceFee.text.trim());
+    final fees = [
+      driverFee,
+      restaurantFee,
+      groceryFee,
+      hardwareFee,
+      produceFee
+    ];
+    if (_baridiMob.text.trim().isEmpty ||
+        fees.any((fee) => fee == null || fee <= 0)) {
+      return;
+    }
     setState(() => _saving = true);
     try {
       await widget.db.collection('app_config').doc('subscription').set({
         'baridiMobNumber': _baridiMob.text.trim(),
-        'monthlyFee': fee,
+        'driverMonthlyFee': driverFee,
+        'restaurantMonthlyFee': restaurantFee,
+        'groceryMonthlyFee': groceryFee,
+        'hardwareMonthlyFee': hardwareFee,
+        'produceMonthlyFee': produceFee,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     } finally {
@@ -1579,8 +1447,22 @@ class _PaymentConfigCardState extends State<_PaymentConfigCard> {
         final data = snap.data?.data();
         if (!_loaded && data != null) {
           _baridiMob.text = data['baridiMobNumber'] as String? ?? '';
-          _fee.text = ((data['monthlyFee'] as num?)?.toDouble() ?? 1500)
-              .toStringAsFixed(0);
+          final fallback = (data['monthlyFee'] as num?)?.toDouble() ?? 1500;
+          _driverFee.text =
+              ((data['driverMonthlyFee'] as num?)?.toDouble() ?? fallback)
+                  .toStringAsFixed(0);
+          _restaurantFee.text =
+              ((data['restaurantMonthlyFee'] as num?)?.toDouble() ?? fallback)
+                  .toStringAsFixed(0);
+          _groceryFee.text =
+              ((data['groceryMonthlyFee'] as num?)?.toDouble() ?? fallback)
+                  .toStringAsFixed(0);
+          _hardwareFee.text =
+              ((data['hardwareMonthlyFee'] as num?)?.toDouble() ?? fallback)
+                  .toStringAsFixed(0);
+          _produceFee.text =
+              ((data['produceMonthlyFee'] as num?)?.toDouble() ?? fallback)
+                  .toStringAsFixed(0);
           _loaded = true;
         }
         return Column(
@@ -1604,13 +1486,29 @@ class _PaymentConfigCardState extends State<_PaymentConfigCard> {
                     keyboardType: TextInputType.phone,
                   ),
                   const SizedBox(height: 10),
-                  AppTextField(
-                    controller: _fee,
-                    hint: context.t('monthly_fee'),
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    prefixIcon:
-                        const Center(widthFactor: 1.4, child: Text('DA')),
+                  _FeeField(
+                    controller: _driverFee,
+                    label: context.t('driver_monthly_fee'),
+                  ),
+                  const SizedBox(height: 10),
+                  _FeeField(
+                    controller: _restaurantFee,
+                    label: context.t('restaurant_monthly_fee'),
+                  ),
+                  const SizedBox(height: 10),
+                  _FeeField(
+                    controller: _groceryFee,
+                    label: context.t('grocery_monthly_fee'),
+                  ),
+                  const SizedBox(height: 10),
+                  _FeeField(
+                    controller: _hardwareFee,
+                    label: context.t('hardware_monthly_fee'),
+                  ),
+                  const SizedBox(height: 10),
+                  _FeeField(
+                    controller: _produceFee,
+                    label: context.t('produce_monthly_fee'),
                   ),
                   const SizedBox(height: 12),
                   PrimaryButton(
@@ -1633,6 +1531,23 @@ class _PaymentConfigCardState extends State<_PaymentConfigCard> {
           ],
         );
       },
+    );
+  }
+}
+
+class _FeeField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+
+  const _FeeField({required this.controller, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return AppTextField(
+      controller: controller,
+      hint: label,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      prefixIcon: const Center(widthFactor: 1.4, child: Text('DA')),
     );
   }
 }

@@ -79,16 +79,6 @@ service cloud.firestore {
             'updatedAt'
           ]);
 
-      allow update: if isClient()
-        && request.resource.data.diff(resource.data)
-          .affectedKeys()
-          .hasOnly(['rating', 'totalDeliveries', 'lastRatingOrderId', 'updatedAt'])
-        && request.resource.data.lastRatingOrderId is string
-        && getAfter(/databases/$(database)/documents/orders/$(request.resource.data.lastRatingOrderId)).data.clientId == request.auth.uid
-        && getAfter(/databases/$(database)/documents/orders/$(request.resource.data.lastRatingOrderId)).data.driverId == uid
-        && getAfter(/databases/$(database)/documents/orders/$(request.resource.data.lastRatingOrderId)).data.status == 'delivered'
-        && getAfter(/databases/$(database)/documents/orders/$(request.resource.data.lastRatingOrderId)).data.clientRating is number;
-
       allow update: if isAdmin();
       allow delete: if isAdmin();
 
@@ -165,24 +155,12 @@ service cloud.firestore {
       allow update: if isClient()
         && resource.data.clientId == request.auth.uid
         && request.resource.data.clientId == resource.data.clientId
-        && resource.data.status in ['open', 'bidding', 'requested', 'priced', 'storePending']
+        && resource.data.status in ['open', 'bidding', 'requested', 'priced', 'storePending', 'storeDriverPending', 'storeDriverRejected']
         && request.resource.data.status == 'cancelled'
         && request.resource.data.cancelledBy == request.auth.uid
         && request.resource.data.diff(resource.data)
           .affectedKeys()
           .hasOnly(['status', 'cancelReason', 'cancelledBy', 'cancelledAt', 'updatedAt']);
-
-      allow update: if isClient()
-        && resource.data.clientId == request.auth.uid
-        && request.resource.data.clientId == resource.data.clientId
-        && resource.data.status == 'delivered'
-        && (!('clientRating' in resource.data) || resource.data.clientRating == null)
-        && request.resource.data.clientRating is number
-        && request.resource.data.clientRating >= 0
-        && request.resource.data.clientRating <= 5
-        && request.resource.data.diff(resource.data)
-          .affectedKeys()
-          .hasOnly(['clientRating', 'clientRatingComment', 'ratedAt']);
 
       allow update: if isClient()
         && resource.data.clientId == request.auth.uid
@@ -232,6 +210,24 @@ service cloud.firestore {
       allow update: if isDriver()
         && resource.data.driverId == request.auth.uid
         && request.resource.data.driverId == resource.data.driverId
+        && resource.data.status == 'storeDriverPending'
+        && request.resource.data.status == 'accepted'
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly(['status', 'acceptedAt', 'driverRespondedAt', 'updatedAt']);
+
+      allow update: if isDriver()
+        && resource.data.driverId == request.auth.uid
+        && request.resource.data.driverId == resource.data.driverId
+        && resource.data.status == 'storeDriverPending'
+        && request.resource.data.status == 'storeDriverRejected'
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly(['status', 'driverRespondedAt', 'updatedAt']);
+
+      allow update: if isDriver()
+        && resource.data.driverId == request.auth.uid
+        && request.resource.data.driverId == resource.data.driverId
         && resource.data.status == 'inProgress'
         && request.resource.data.status == 'delivered'
         && request.resource.data.diff(resource.data)
@@ -240,8 +236,8 @@ service cloud.firestore {
 
       allow update: if isStore()
         && resource.data.storeId == request.auth.uid
-        && resource.data.status == 'storePending'
-        && request.resource.data.status == 'accepted'
+        && resource.data.status in ['storePending', 'storeDriverRejected']
+        && request.resource.data.status == 'storeDriverPending'
         && request.resource.data.driverId is string
         && request.resource.data.acceptedBidAmount == resource.data.deliveryFee
         && request.resource.data.diff(resource.data)
@@ -250,10 +246,18 @@ service cloud.firestore {
             'status',
             'driverId',
             'acceptedBidAmount',
-            'acceptedAt',
             'assignedByStoreAt',
+            'driverRespondedAt',
             'updatedAt'
           ]);
+
+      allow update: if isStore()
+        && resource.data.storeId == request.auth.uid
+        && resource.data.status == 'storePending'
+        && request.resource.data.status == 'rejected'
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly(['status', 'rejectedByStoreAt', 'updatedAt']);
 
       allow delete: if isClient()
         && resource.data.clientId == request.auth.uid
@@ -365,21 +369,6 @@ service cloud.firestore {
       allow read: if isAdmin()
         || (isStore() && resource.data.storeId == request.auth.uid);
       allow update, delete: if isAdmin();
-    }
-
-    match /driver_reviews/{reviewId} {
-      allow read: if isApproved();
-      allow create: if isClient()
-        && request.resource.data.clientId == request.auth.uid
-        && request.resource.data.driverId is string
-        && request.resource.data.rating is number
-        && request.resource.data.rating >= 1
-        && request.resource.data.rating <= 5
-        && request.resource.data.comment is string
-        && request.resource.data.comment.size() > 0
-        && request.resource.data.comment.size() <= 800;
-      allow update: if false;
-      allow delete: if isAdmin();
     }
 
     match /app_config/{configId} {

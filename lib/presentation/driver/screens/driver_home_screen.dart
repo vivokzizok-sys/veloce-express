@@ -39,25 +39,6 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         appBar: AppBar(
           title: const Text('Veloce Express'),
           leading: AppMenuButton(user: user),
-          actions: [
-            Padding(
-              padding: const EdgeInsetsDirectional.only(end: 12),
-              child: Row(
-                children: [
-                  Text(
-                    user.rating.toStringAsFixed(1),
-                    style: AppTextStyles.captionMedium,
-                  ),
-                  const SizedBox(width: 4),
-                  const Icon(
-                    Icons.star_rounded,
-                    color: AppColors.brandYellow,
-                    size: 20,
-                  ),
-                ],
-              ),
-            ),
-          ],
         ),
         body: Column(
           children: [
@@ -338,8 +319,12 @@ class _JobTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isStoreDriverRequest = order.status == OrderStatus.storeDriverPending;
+    final canOpenBid = order.sourceType != 'store' && !isStoreDriverRequest;
     return InkWell(
-      onTap: () => context.push('/driver/bid/${order.orderId}'),
+      onTap: canOpenBid
+          ? () => context.push('/driver/bid/${order.orderId}')
+          : null,
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -370,8 +355,54 @@ class _JobTile extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
+            if (order.sourceType == 'store') ...[
+              Text('${context.t('store')}: ${order.storeName ?? ''}'),
+              if (order.storeItemName != null)
+                Text('${context.t('item_name')}: ${order.storeItemName}'),
+              if (order.productsTotal != null)
+                Text(
+                  '${context.t('products_total')}: ${order.productsTotal!.toStringAsFixed(0)} DA',
+                ),
+              Text(
+                '${context.t('delivery_fee')}: ${order.deliveryFee.toStringAsFixed(0)} DA',
+              ),
+              if (order.totalAmount != null)
+                Text(
+                  '${context.t('total')}: ${order.totalAmount!.toStringAsFixed(0)} DA',
+                ),
+              const SizedBox(height: 10),
+            ],
             Text(context.t('delivery_address'), style: AppTextStyles.caption),
             Text(order.dropoffAddress, style: AppTextStyles.bodyMedium),
+            if (isStoreDriverRequest) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _rejectStoreDelivery(context),
+                      icon: const Icon(Icons.close_rounded),
+                      label: Text(context.t('reject')),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () => _acceptStoreDelivery(context),
+                      icon: const Icon(Icons.check_rounded),
+                      label: Text(context.t('accept')),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (order.status == OrderStatus.storeDriverRejected) ...[
+              const SizedBox(height: 10),
+              Text(
+                context.t('you_rejected_order'),
+                style: AppTextStyles.caption.copyWith(color: AppColors.error),
+              ),
+            ],
           ],
         ),
       ),
@@ -380,6 +411,8 @@ class _JobTile extends StatelessWidget {
 
   Color _statusColor(OrderStatus status) => switch (status) {
         OrderStatus.storePending => AppColors.warning,
+        OrderStatus.storeDriverPending => AppColors.info,
+        OrderStatus.storeDriverRejected => AppColors.error,
         OrderStatus.requested => AppColors.info,
         OrderStatus.priced => AppColors.warning,
         OrderStatus.accepted => AppColors.accent,
@@ -390,4 +423,38 @@ class _JobTile extends StatelessWidget {
         OrderStatus.open => AppColors.info,
         OrderStatus.bidding => AppColors.warning,
       };
+
+  Future<void> _acceptStoreDelivery(BuildContext context) async {
+    await FirebaseFirestore.instance
+        .collection('orders')
+        .doc(order.orderId)
+        .update({
+      'status': 'accepted',
+      'acceptedAt': FieldValue.serverTimestamp(),
+      'driverRespondedAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> _rejectStoreDelivery(BuildContext context) async {
+    await FirebaseFirestore.instance
+        .collection('orders')
+        .doc(order.orderId)
+        .update({
+      'status': 'storeDriverRejected',
+      'driverRespondedAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+    if (order.storeId == null) return;
+    await FirebaseFirestore.instance.collection('notifications').add({
+      'userId': order.storeId,
+      'orderId': order.orderId,
+      'type': 'store_driver_rejected',
+      'title': 'Driver rejected order',
+      'body': '${order.storeName ?? 'Store'} delivery was rejected.',
+      'createdBy': order.driverId,
+      'read': false,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
 }

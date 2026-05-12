@@ -79,13 +79,6 @@ class DriverProfileScreen extends StatelessWidget {
                             context.t(driver.vehicleType?.name ?? 'motorcycle'),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _ProfileStat(
-                        label: context.t('rating'),
-                        value: driver.rating.toStringAsFixed(1),
-                      ),
-                    ),
                   ],
                 ),
               ],
@@ -104,10 +97,6 @@ class DriverProfileScreen extends StatelessWidget {
             icon: const Icon(Icons.phone_rounded),
             label: Text(context.t('call_driver')),
           ),
-          const SizedBox(height: 24),
-          Text(context.t('reviews'), style: AppTextStyles.title3),
-          const SizedBox(height: 10),
-          _DriverReviews(driverId: driver.uid),
         ],
       ),
     );
@@ -128,99 +117,6 @@ class DriverProfileScreen extends StatelessWidget {
     await launchUrl(
       Uri(scheme: 'tel', path: normalized),
       mode: LaunchMode.externalApplication,
-    );
-  }
-}
-
-class _DriverReviews extends StatelessWidget {
-  final String driverId;
-
-  const _DriverReviews({required this.driverId});
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: FirebaseFirestore.instance
-          .collection('driver_reviews')
-          .where('driverId', isEqualTo: driverId)
-          .orderBy('createdAt', descending: true)
-          .limit(30)
-          .snapshots(),
-      builder: (context, snap) {
-        if (snap.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-        }
-        final reviews = snap.data?.docs ?? [];
-
-        if (reviews.isEmpty) {
-          return Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.surface(context),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.border(context)),
-            ),
-            child: Text(
-              context.t('no_reviews'),
-              style: AppTextStyles.body.copyWith(
-                color: AppColors.textSecondary(context),
-              ),
-            ),
-          );
-        }
-
-        return Column(
-          children: reviews.map((doc) {
-            final data = doc.data();
-            final rating = (data['rating'] as num?)?.toDouble() ?? 0;
-            final comment = data['comment'] as String? ?? '';
-            final clientName =
-                data['clientName'] as String? ?? context.t('client');
-            return Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.surface(context),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.border(context)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.star_rounded,
-                          color: AppColors.warning, size: 18),
-                      const SizedBox(width: 4),
-                      Text(
-                        rating.toStringAsFixed(1),
-                        style: AppTextStyles.captionMedium.copyWith(
-                          color: AppColors.textPrimary(context),
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        clientName,
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.textSecondary(context),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    comment,
-                    style: AppTextStyles.body.copyWith(
-                      color: AppColors.textPrimary(context),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
-        );
-      },
     );
   }
 }

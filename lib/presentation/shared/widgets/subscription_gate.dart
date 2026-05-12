@@ -11,7 +11,7 @@ import '../../../domain/entities/user_entity.dart';
 import 'shared_widgets.dart';
 
 class SubscriptionGate extends StatelessWidget {
-  static const _freeTrialDays = 60;
+  static const _freeTrialDays = 30;
 
   final UserEntity user;
   final Widget child;
@@ -96,6 +96,7 @@ class _SubscriptionBlockedScreenState
         'phoneNumber': widget.user.phoneNumber,
         'email': widget.user.email,
         'role': widget.user.role.name,
+        'storeType': widget.user.storeType?.name,
         'amount': monthlyFee,
         'baridiMobNumber': baridiMobNumber,
         'receiptBase64': _receiptBase64,
@@ -123,7 +124,7 @@ class _SubscriptionBlockedScreenState
         final config = snap.data?.data() ?? const <String, dynamic>{};
         final baridiMobNumber =
             config['baridiMobNumber'] as String? ?? 'ضع رقم بريدي موب';
-        final monthlyFee = (config['monthlyFee'] as num?)?.toDouble() ?? 1500.0;
+        final monthlyFee = _subscriptionFee(config, widget.user);
         return Scaffold(
           backgroundColor: AppColors.page(context),
           body: SafeArea(
@@ -217,6 +218,19 @@ class _SubscriptionBlockedScreenState
       },
     );
   }
+}
+
+double _subscriptionFee(Map<String, dynamic> config, UserEntity user) {
+  if (user.isDriver) {
+    return (config['driverMonthlyFee'] as num?)?.toDouble() ??
+        (config['monthlyFee'] as num?)?.toDouble() ??
+        1500.0;
+  }
+  final storeType = user.storeType?.name ?? 'restaurant';
+  return (config['${storeType}MonthlyFee'] as num?)?.toDouble() ??
+      (config['storeMonthlyFee'] as num?)?.toDouble() ??
+      (config['monthlyFee'] as num?)?.toDouble() ??
+      1500.0;
 }
 
 class _InfoRow extends StatelessWidget {

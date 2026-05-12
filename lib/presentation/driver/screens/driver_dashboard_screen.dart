@@ -28,7 +28,9 @@ class DriverDashboardScreen extends StatelessWidget {
           final docs = snap.data?.docs ?? [];
           final active = docs.where((doc) {
             final status = doc.data()['status'] as String? ?? '';
-            return status == 'accepted' || status == 'inProgress';
+            return status == 'storeDriverPending' ||
+                status == 'accepted' ||
+                status == 'inProgress';
           }).length;
           final completed =
               docs.where((doc) => doc.data()['status'] == 'delivered').toList();
@@ -54,8 +56,6 @@ class DriverDashboardScreen extends StatelessWidget {
                     CurrencyFormatter.da(earned),
                     Icons.payments_outlined,
                     AppColors.driverRole),
-                _StatItem(context.t('rating'), user.rating.toStringAsFixed(1),
-                    Icons.star_rounded, AppColors.warning),
               ]),
               const SizedBox(height: 24),
               Text(context.t('call_logs'), style: AppTextStyles.title2),

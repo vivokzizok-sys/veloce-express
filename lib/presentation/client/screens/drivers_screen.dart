@@ -40,7 +40,7 @@ class DriversScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           final drivers = snap.data!.docs.map(UserModel.fromFirestore).toList()
-            ..sort((a, b) => b.rating.compareTo(a.rating));
+            ..sort((a, b) => a.fullName.compareTo(b.fullName));
           if (drivers.isEmpty) {
             return EmptyState(
               icon: Icons.local_shipping_outlined,
@@ -172,30 +172,12 @@ class _DriverCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.star_rounded,
-                            color: AppColors.brandYellow,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 3),
-                          Text(
-                            driver.rating.toStringAsFixed(1),
-                            style: AppTextStyles.captionMedium,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              context
-                                  .t(driver.vehicleType?.name ?? 'motorcycle'),
-                              style: AppTextStyles.caption.copyWith(
-                                color: AppColors.textSecondary(context),
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
+                      Text(
+                        context.t(driver.vehicleType?.name ?? 'motorcycle'),
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textSecondary(context),
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
